@@ -242,7 +242,7 @@
       <label><input type="radio" name="expMode" value="overlay" checked><span><b>實際疊上底圖</b><small>實際調查結果覆蓋於原先規劃</small></span></label>
       <label><input type="radio" name="expMode" value="actual"><span><b>只有實際</b><small>只顯示實際調查結果與牆壁</small></span></label>
     </div>
-    <label class="exportcheck" id="expListLabel"><input type="checkbox" id="expIncludeList"><span>在地圖下方加入三欄店家對照清單</span></label>
+    <label class="exportcheck" id="expListLabel"><input type="checkbox" id="expIncludeList"><span>在地圖下方加入五欄店家對照清單</span></label>
   </div>
   <div class="expgrid">
     <button class="btn" id="expPNG">PNG<span class="s">點陣圖片</span></button>
@@ -669,16 +669,16 @@ $("#showNames").onchange=e=>{state.showNames=e.target.checked;save();drawOverlay
 $("#btnClearActual").onclick=()=>{ if(confirm("清除所有實際分類、店家與店名?(規劃層保留)")){ for(const k in state.cells){delete state.cells[k].cat;delete state.cells[k].shop;if(!state.cells[k].plan)delete state.cells[k];} state.shops=[]; recompute(); save(); closeSheet("menuSheet"); drawBase(); drawOverlay(); renderList(); } };
 
 /* ---- render composite (for export) ---- */
-const EXPORT_LEGEND_H=142, EXPORT_LIST_ROW_H=86;
+const EXPORT_PAD_X=CW*5, EXPORT_PAD_Y=CH*5, EXPORT_COLS=5, EXPORT_LEGEND_H=174, EXPORT_LIST_ROW_H=108;
 function exportOrderedShops(){ recompute(); return state.shops.filter(sh=>shopCount(sh.id)>0).sort((a,b)=>(numbers[a.id]||999)-(numbers[b.id]||999)); }
 function normalizedExportOptions(opts={}){ const mode=["plan","overlay","actual"].includes(opts.mode)?opts.mode:"overlay";
   return {mode,includeList:mode!=="plan"&&!!opts.includeList}; }
 function getExportOptions(){ const picked=document.querySelector('input[name="expMode"]:checked');
   return normalizedExportOptions({mode:picked?picked.value:"overlay",includeList:$("#expIncludeList").checked}); }
-function exportLayout(opts={}){ const options=normalizedExportOptions(opts),shops=exportOrderedShops(),rowsPerCol=Math.max(1,Math.ceil(shops.length/3));
-  const listH=options.includeList?58+rowsPerCol*EXPORT_LIST_ROW_H+24:0;
-  return {...options,shops,rowsPerCol,legendItems:options.mode==="plan"?state.zones:state.cats,totalH:imgH+EXPORT_LEGEND_H+listH,listH}; }
-function exportScaleFor(layout){const byPixels=Math.sqrt(16000000/(imgW*layout.totalH)),bySide=Math.min(14000/imgW,14000/layout.totalH);return clamp(Math.min(2,byPixels,bySide),.6,2);}
+function exportLayout(opts={}){ const options=normalizedExportOptions(opts),shops=exportOrderedShops(),rowsPerCol=Math.max(1,Math.ceil(shops.length/EXPORT_COLS));
+  const width=imgW+EXPORT_PAD_X*2,mapH=imgH+EXPORT_PAD_Y*2,listH=options.includeList?68+rowsPerCol*EXPORT_LIST_ROW_H+26:0;
+  return {...options,shops,rowsPerCol,width,mapH,padX:EXPORT_PAD_X,padY:EXPORT_PAD_Y,legendItems:options.mode==="plan"?state.zones:state.cats,totalH:mapH+EXPORT_LEGEND_H+listH,listH}; }
+function exportScaleFor(layout){const byPixels=Math.sqrt(16000000/(layout.width*layout.totalH)),bySide=Math.min(14000/layout.width,14000/layout.totalH);return clamp(Math.min(2,byPixels,bySide),.6,2);}
 function measuredWidth(ctx,text){ const m=typeof ctx.measureText==="function"?ctx.measureText(text):null; return m&&Number.isFinite(m.width)?m.width:String(text).length*18; }
 function wrapCanvasText(ctx,text,maxWidth,maxLines=2){ const chars=Array.from(String(text||"")),lines=[]; let line="";
   for(const ch of chars){ const next=line+ch; if(line&&measuredWidth(ctx,next)>maxWidth){lines.push(line);line=ch;if(lines.length===maxLines)break;}else line=next; }
@@ -686,33 +686,33 @@ function wrapCanvasText(ctx,text,maxWidth,maxLines=2){ const chars=Array.from(St
   const used=lines.join("").length;
   if(used<chars.length&&lines.length){ let last=lines.length-1,s=lines[last]; while(s&&measuredWidth(ctx,s+"…")>maxWidth)s=s.slice(0,-1); lines[last]=s+"…"; }
   return lines.length?lines:[""]; }
-function drawExportLegend(ctx,layout){ const y=imgH; ctx.fillStyle="#fff"; ctx.fillRect(0,y,imgW,EXPORT_LEGEND_H); ctx.strokeStyle="#cad4d5";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y+.5);ctx.lineTo(imgW,y+.5);ctx.stroke();
-  ctx.fillStyle="#0e3b43";ctx.font="700 22px 'Noto Sans TC',sans-serif";ctx.textAlign="left";ctx.textBaseline="alphabetic";
-  ctx.fillText(`顏色圖例｜${layout.mode==="plan"?"原先規劃":"實際分類"}`,30,y+32);
-  const cols=5,colW=(imgW-60)/cols,itemY=y+62;
-  layout.legendItems.forEach((item,i)=>{ const col=i%cols,row=Math.floor(i/cols),x=30+col*colW,yy=itemY+row*39;
-    ctx.fillStyle=item.color;ctx.fillRect(x,yy-17,23,23);ctx.strokeStyle="rgba(0,0,0,.22)";ctx.strokeRect(x+.5,yy-16.5,22,22);
-    ctx.fillStyle="#203236";ctx.font="600 17px 'Noto Sans TC',sans-serif";ctx.fillText(item.name,x+34,yy+1,colW-42); }); }
-function drawExportList(ctx,layout){ if(!layout.includeList)return; const top=imgH+EXPORT_LEGEND_H,pad=30,colW=(imgW-pad*2)/3;
-  ctx.fillStyle="#f7f9f9";ctx.fillRect(0,top,imgW,layout.listH);ctx.strokeStyle="#cad4d5";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,top+.5);ctx.lineTo(imgW,top+.5);ctx.stroke();
-  ctx.fillStyle="#0e3b43";ctx.font="700 23px 'Noto Sans TC',sans-serif";ctx.textAlign="left";ctx.textBaseline="alphabetic";ctx.fillText("店家對照",pad,top+37);
-  for(let c=1;c<3;c++){const x=pad+c*colW;ctx.strokeStyle="#d8dfe0";ctx.beginPath();ctx.moveTo(x,top+52);ctx.lineTo(x,top+layout.listH-18);ctx.stroke();}
-  if(!layout.shops.length){ctx.fillStyle="#627579";ctx.font="16px 'Noto Sans TC',sans-serif";ctx.fillText("尚無店家資料",pad,top+79);return;}
-  for(let col=0;col<3;col++){ const part=layout.shops.slice(col*layout.rowsPerCol,(col+1)*layout.rowsPerCol);
-    part.forEach((sh,row)=>{ const x=pad+col*colW+12,y=top+55+row*EXPORT_LIST_ROW_H,num=numbers[sh.id],cat=catById(sh.cat);
+function drawExportLegend(ctx,layout){ const y=layout.mapH; ctx.fillStyle="#fff"; ctx.fillRect(0,y,layout.width,EXPORT_LEGEND_H); ctx.strokeStyle="#cad4d5";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y+.5);ctx.lineTo(layout.width,y+.5);ctx.stroke();
+  ctx.fillStyle="#0e3b43";ctx.font="700 27px 'Noto Sans TC',sans-serif";ctx.textAlign="left";ctx.textBaseline="alphabetic";
+  ctx.fillText(`顏色圖例｜${layout.mode==="plan"?"原先規劃":"實際分類"}`,36,y+40);
+  const colW=(layout.width-72)/EXPORT_COLS,itemY=y+83;
+  layout.legendItems.forEach((item,i)=>{ const col=i%EXPORT_COLS,row=Math.floor(i/EXPORT_COLS),x=36+col*colW,yy=itemY+row*48;
+    ctx.fillStyle=item.color;ctx.fillRect(x,yy-21,29,29);ctx.strokeStyle="rgba(0,0,0,.22)";ctx.strokeRect(x+.5,yy-20.5,28,28);
+    ctx.fillStyle="#203236";ctx.font="600 21px 'Noto Sans TC',sans-serif";ctx.fillText(item.name,x+41,yy+2,colW-49); }); }
+function drawExportList(ctx,layout){ if(!layout.includeList)return; const top=layout.mapH+EXPORT_LEGEND_H,pad=32,colW=(layout.width-pad*2)/EXPORT_COLS;
+  ctx.fillStyle="#f7f9f9";ctx.fillRect(0,top,layout.width,layout.listH);ctx.strokeStyle="#cad4d5";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,top+.5);ctx.lineTo(layout.width,top+.5);ctx.stroke();
+  ctx.fillStyle="#0e3b43";ctx.font="700 28px 'Noto Sans TC',sans-serif";ctx.textAlign="left";ctx.textBaseline="alphabetic";ctx.fillText("店家對照",pad,top+45);
+  for(let c=1;c<EXPORT_COLS;c++){const x=pad+c*colW;ctx.strokeStyle="#d8dfe0";ctx.beginPath();ctx.moveTo(x,top+64);ctx.lineTo(x,top+layout.listH-18);ctx.stroke();}
+  if(!layout.shops.length){ctx.fillStyle="#627579";ctx.font="20px 'Noto Sans TC',sans-serif";ctx.fillText("尚無店家資料",pad,top+94);return;}
+  for(let col=0;col<EXPORT_COLS;col++){ const part=layout.shops.slice(col*layout.rowsPerCol,(col+1)*layout.rowsPerCol);
+    part.forEach((sh,row)=>{ const x=pad+col*colW+9,y=top+67+row*EXPORT_LIST_ROW_H,num=numbers[sh.id],cat=catById(sh.cat);
       if(row){ctx.strokeStyle="#e1e6e7";ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+colW-24,y);ctx.stroke();}
-      ctx.fillStyle="#0e3b43";ctx.beginPath();ctx.arc(x+18,y+27,17,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="700 15px 'Noto Sans TC',sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(num,x+18,y+27);
-      ctx.fillStyle="#1c2b2e";ctx.font="600 18px 'Noto Sans TC',sans-serif";ctx.textAlign="left";ctx.textBaseline="alphabetic";
-      const lines=wrapCanvasText(ctx,sh.name,colW-74,2);lines.forEach((line,i)=>ctx.fillText(line,x+48,y+25+i*21));
-      ctx.fillStyle="#627579";ctx.font="14px 'Noto Sans TC',sans-serif";ctx.fillText(cat?cat.name:"",x+48,y+70,colW-74); }); } }
-function renderComposite(ctx,scale,opts={}){ const layout=exportLayout(opts); ctx.save();ctx.scale(scale,scale);ctx.fillStyle="#fff";ctx.fillRect(0,0,imgW,layout.totalH);
+      ctx.fillStyle="#0e3b43";ctx.beginPath();ctx.arc(x+19,y+32,19,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="700 17px 'Noto Sans TC',sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(num,x+19,y+32);
+      ctx.fillStyle="#1c2b2e";ctx.font="600 22px 'Noto Sans TC',sans-serif";ctx.textAlign="left";ctx.textBaseline="alphabetic";
+      const lines=wrapCanvasText(ctx,sh.name,colW-67,2);lines.forEach((line,i)=>ctx.fillText(line,x+48,y+31+i*26));
+      ctx.fillStyle="#627579";ctx.font="18px 'Noto Sans TC',sans-serif";ctx.fillText(cat?cat.name:"",x+48,y+91,colW-67); }); } }
+function renderComposite(ctx,scale,opts={}){ const layout=exportLayout(opts); ctx.save();ctx.scale(scale,scale);ctx.fillStyle="#fff";ctx.fillRect(0,0,layout.width,layout.totalH);ctx.save();ctx.translate(layout.padX,layout.padY);
   if(layout.mode==="plan"||layout.mode==="overlay")for(const k in state.cells){const d=state.cells[k];if(!d.plan)continue;const z=zoneById(d.plan);if(!z)continue;const [r,c]=keyRC(k);ctx.fillStyle=hexA(z.color,d.plan==="zw"?1:.9);ctx.fillRect(c*CW,r*CH,CW+.6,CH+.6);}
   if(layout.mode!=="plan"){const a=state.fillA/100;for(const k in state.cells){const d=state.cells[k];if(!d.cat)continue;const cat=catById(d.cat);if(!cat)continue;const [r,c]=keyRC(k);ctx.fillStyle=hexA(cat.color,a);ctx.fillRect(c*CW,r*CH,CW+.6,CH+.6);}}
   drawWalls(ctx);
   if(layout.mode!=="plan")drawShopBorders(ctx);
   if(state.showGrid){ctx.lineWidth=Math.max(.4,CW*.04);ctx.strokeStyle="rgba(20,50,55,.13)";ctx.beginPath();for(let c=0;c<=GRID_W;c++){ctx.moveTo(c*CW,0);ctx.lineTo(c*CW,imgH);}for(let r=0;r<=GRID_H;r++){ctx.moveTo(0,r*CH);ctx.lineTo(imgW,r*CH);}ctx.stroke();}
   if(layout.mode!=="plan")layout.shops.forEach(sh=>{const num=numbers[sh.id];shopLabelAnchors(sh.id).forEach(anchor=>{const cx=(anchor[1]+.5)*CW,cy=(anchor[0]+.5)*CH,rr=CH*.75;ctx.fillStyle="#0e3b43";ctx.beginPath();ctx.arc(cx,cy,rr,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="700 "+(CH*.9)+"px 'Noto Sans TC',sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(num,cx,cy+CH*.03);});});
-  drawExportLegend(ctx,layout);drawExportList(ctx,layout);ctx.restore();return layout; }
+  ctx.restore();drawExportLegend(ctx,layout);drawExportList(ctx,layout);ctx.restore();return layout; }
 
 /* ---- exports ---- */
 function stamp(){ const d=new Date(),p=n=>String(n).padStart(2,"0"); return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes()); }
@@ -725,7 +725,7 @@ function canvasBytes(cv,type,quality){return new Promise((resolve,reject)=>cv.to
 function syncExportOptions(){ const plan=getExportOptions().mode==="plan",check=$("#expIncludeList");check.disabled=plan;if(plan)check.checked=false;$("#expListLabel").classList.toggle("disabled",plan); }
 document.querySelectorAll('input[name="expMode"]').forEach(r=>r.onchange=syncExportOptions);
 async function exportImage(format){ const buttons=[...$("#expSheet").querySelectorAll("button")];buttons.forEach(b=>b.disabled=true);toast("正在建立 "+format.toUpperCase()+"…");
-  try{const opts=getExportOptions(),layout=exportLayout(opts);let data,type;if(format==="svg"){data=sb(buildSVG(opts));type="image/svg+xml";}else{const sc=exportScaleFor(layout),cv=document.createElement("canvas");cv.width=Math.round(imgW*sc);cv.height=Math.round(layout.totalH*sc);renderComposite(cv.getContext("2d"),sc,opts);
+  try{const opts=getExportOptions(),layout=exportLayout(opts);let data,type;if(format==="svg"){data=sb(buildSVG(opts));type="image/svg+xml";}else{const sc=exportScaleFor(layout),cv=document.createElement("canvas");cv.width=Math.round(layout.width*sc);cv.height=Math.round(layout.totalH*sc);renderComposite(cv.getContext("2d"),sc,opts);
       if(format==="png"){data=await canvasBytes(cv,"image/png");type="image/png";}else{const jpeg=dataURLtoU8(cv.toDataURL("image/jpeg",.94));data=buildPdf(jpeg,cv.width,cv.height);type="application/pdf";}}
     dl(new Blob([data],{type}),"市場店家圖-"+stamp()+"."+format);toast("已匯出 "+format.toUpperCase());
   }catch(e){console.error(e);toast("匯出失敗，請再試一次");}finally{buttons.forEach(b=>b.disabled=false);syncExportOptions();} }
@@ -735,18 +735,19 @@ $("#expSVG").onclick=()=>exportImage("svg");
 $("#expXLSX").onclick=()=>{ const x=exportXlsxBytes(); dl(new Blob([x],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),"店家對照表-"+stamp()+".xlsx"); toast("已匯出 Excel 對照表"); };
 
 function wrapSvgText(text,maxChars,maxLines=2){const chars=Array.from(String(text||"")),lines=[];for(let i=0;i<chars.length&&lines.length<maxLines;i+=maxChars)lines.push(chars.slice(i,i+maxChars).join(""));if(lines.join("").length<chars.length&&lines.length)lines[lines.length-1]=lines[lines.length-1].slice(0,-1)+"…";return lines.length?lines:[""];}
-function buildSVG(opts={}){ const layout=exportLayout(opts);let r=`<svg xmlns="http://www.w3.org/2000/svg" width="${imgW}" height="${layout.totalH}" viewBox="0 0 ${imgW} ${layout.totalH}" font-family="'Noto Sans TC',sans-serif"><rect width="${imgW}" height="${layout.totalH}" fill="#fff"/>`;
+function buildSVG(opts={}){ const layout=exportLayout(opts);let r=`<svg xmlns="http://www.w3.org/2000/svg" width="${layout.width}" height="${layout.totalH}" viewBox="0 0 ${layout.width} ${layout.totalH}" font-family="'Noto Sans TC',sans-serif"><rect width="${layout.width}" height="${layout.totalH}" fill="#fff"/><g transform="translate(${layout.padX} ${layout.padY})">`;
   if(layout.mode==="plan"||layout.mode==="overlay")for(const k in state.cells){const d=state.cells[k];if(!d.plan)continue;const z=zoneById(d.plan);if(!z)continue;const [rr,c]=keyRC(k);r+=`<rect x="${(c*CW).toFixed(1)}" y="${(rr*CH).toFixed(1)}" width="${CW.toFixed(1)}" height="${CH.toFixed(1)}" fill="${z.color}" fill-opacity="${d.plan==="zw"?1:.9}"/>`;}
   if(layout.mode!=="plan"){const a=state.fillA/100;for(const k in state.cells){const d=state.cells[k];if(!d.cat)continue;const cat=catById(d.cat);if(!cat)continue;const [rr,c]=keyRC(k);r+=`<rect x="${(c*CW).toFixed(1)}" y="${(rr*CH).toFixed(1)}" width="${CW.toFixed(1)}" height="${CH.toFixed(1)}" fill="${cat.color}" fill-opacity="${a}"/>`;}}
   const wallColor=zoneById("zw")?.color||"#3B3838";for(const k in state.cells){if(state.cells[k].plan!=="zw")continue;const [rr,c]=keyRC(k);r+=`<rect class="wall" x="${(c*CW).toFixed(1)}" y="${(rr*CH).toFixed(1)}" width="${CW.toFixed(1)}" height="${CH.toFixed(1)}" fill="${wallColor}"/>`;}
   if(layout.mode!=="plan")for(const k in state.cells){const d=state.cells[k];if(!d.shop)continue;const [rr,c]=keyRC(k),seg=[];if((state.cells[(rr-1)+"_"+c]||{}).shop!==d.shop)seg.push([c*CW,rr*CH,(c+1)*CW,rr*CH]);if((state.cells[(rr+1)+"_"+c]||{}).shop!==d.shop)seg.push([c*CW,(rr+1)*CH,(c+1)*CW,(rr+1)*CH]);if((state.cells[rr+"_"+(c-1)]||{}).shop!==d.shop)seg.push([c*CW,rr*CH,c*CW,(rr+1)*CH]);if((state.cells[rr+"_"+(c+1)]||{}).shop!==d.shop)seg.push([(c+1)*CW,rr*CH,(c+1)*CW,(rr+1)*CH]);seg.forEach(g=>r+=`<line x1="${g[0].toFixed(1)}" y1="${g[1].toFixed(1)}" x2="${g[2].toFixed(1)}" y2="${g[3].toFixed(1)}" stroke="#142d32" stroke-opacity=".55" stroke-width="${(CW*.12).toFixed(1)}"/>`);}
   if(state.showGrid){r+=`<g stroke="#143237" stroke-opacity=".13" stroke-width="0.5">`;for(let c=0;c<=GRID_W;c++)r+=`<line x1="${(c*CW).toFixed(1)}" y1="0" x2="${(c*CW).toFixed(1)}" y2="${imgH}"/>`;for(let rr=0;rr<=GRID_H;rr++)r+=`<line x1="0" y1="${(rr*CH).toFixed(1)}" x2="${imgW}" y2="${(rr*CH).toFixed(1)}"/>`;r+=`</g>`;}
   if(layout.mode!=="plan")layout.shops.forEach(sh=>{const num=numbers[sh.id];shopLabelAnchors(sh.id).forEach(anchor=>{const cx=(anchor[1]+.5)*CW,cy=(anchor[0]+.5)*CH;r+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${(CH*.75).toFixed(1)}" fill="#0e3b43"/><text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" fill="#fff" font-size="${(CH*.9).toFixed(1)}" font-weight="700" text-anchor="middle" dominant-baseline="central">${num}</text>`;});});
-  const ly=imgH,cols=5,colW=(imgW-60)/cols;r+=`<rect x="0" y="${ly}" width="${imgW}" height="${EXPORT_LEGEND_H}" fill="#fff"/><line x1="0" y1="${ly}" x2="${imgW}" y2="${ly}" stroke="#cad4d5"/><text x="30" y="${ly+32}" fill="#0e3b43" font-size="22" font-weight="700">顏色圖例｜${layout.mode==="plan"?"原先規劃":"實際分類"}</text>`;
-  layout.legendItems.forEach((item,i)=>{const col=i%cols,row=Math.floor(i/cols),x=30+col*colW,y=ly+62+row*39;r+=`<rect x="${x.toFixed(1)}" y="${(y-17).toFixed(1)}" width="23" height="23" rx="3" fill="${item.color}" stroke="#000" stroke-opacity=".22"/><text x="${(x+34).toFixed(1)}" y="${(y+1).toFixed(1)}" fill="#203236" font-size="17" font-weight="600">${xesc(item.name)}</text>`;});
-  if(layout.includeList){const top=imgH+EXPORT_LEGEND_H,pad=30,listColW=(imgW-pad*2)/3;r+=`<rect x="0" y="${top}" width="${imgW}" height="${layout.listH}" fill="#f7f9f9"/><line x1="0" y1="${top}" x2="${imgW}" y2="${top}" stroke="#cad4d5"/><text x="${pad}" y="${top+37}" fill="#0e3b43" font-size="23" font-weight="700">店家對照</text>`;for(let c=1;c<3;c++){const x=pad+c*listColW;r+=`<line x1="${x.toFixed(1)}" y1="${top+52}" x2="${x.toFixed(1)}" y2="${top+layout.listH-18}" stroke="#d8dfe0"/>`;}
-    if(!layout.shops.length)r+=`<text x="${pad}" y="${top+79}" fill="#627579" font-size="16">尚無店家資料</text>`;
-    for(let col=0;col<3;col++){const part=layout.shops.slice(col*layout.rowsPerCol,(col+1)*layout.rowsPerCol);part.forEach((sh,row)=>{const x=pad+col*listColW+12,y=top+55+row*EXPORT_LIST_ROW_H,num=numbers[sh.id],cat=catById(sh.cat),lines=wrapSvgText(sh.name,30,2);if(row)r+=`<line x1="${x.toFixed(1)}" y1="${y}" x2="${(x+listColW-24).toFixed(1)}" y2="${y}" stroke="#e1e6e7"/>`;r+=`<circle cx="${(x+18).toFixed(1)}" cy="${y+27}" r="17" fill="#0e3b43"/><text x="${(x+18).toFixed(1)}" y="${y+27}" fill="#fff" font-size="15" font-weight="700" text-anchor="middle" dominant-baseline="central">${num}</text><text x="${(x+48).toFixed(1)}" y="${y+25}" fill="#1c2b2e" font-size="18" font-weight="600">${lines.map((line,i)=>`<tspan x="${(x+48).toFixed(1)}" y="${y+25+i*21}">${xesc(line)}</tspan>`).join("")}</text><text x="${(x+48).toFixed(1)}" y="${y+70}" fill="#627579" font-size="14">${xesc(cat?cat.name:"")}</text>`;});}
+  r+=`</g>`;
+  const ly=layout.mapH,colW=(layout.width-72)/EXPORT_COLS;r+=`<rect x="0" y="${ly}" width="${layout.width}" height="${EXPORT_LEGEND_H}" fill="#fff"/><line x1="0" y1="${ly}" x2="${layout.width}" y2="${ly}" stroke="#cad4d5"/><text x="36" y="${ly+40}" fill="#0e3b43" font-size="27" font-weight="700">顏色圖例｜${layout.mode==="plan"?"原先規劃":"實際分類"}</text>`;
+  layout.legendItems.forEach((item,i)=>{const col=i%EXPORT_COLS,row=Math.floor(i/EXPORT_COLS),x=36+col*colW,y=ly+83+row*48;r+=`<rect x="${x.toFixed(1)}" y="${(y-21).toFixed(1)}" width="29" height="29" rx="4" fill="${item.color}" stroke="#000" stroke-opacity=".22"/><text x="${(x+41).toFixed(1)}" y="${(y+2).toFixed(1)}" fill="#203236" font-size="21" font-weight="600">${xesc(item.name)}</text>`;});
+  if(layout.includeList){const top=layout.mapH+EXPORT_LEGEND_H,pad=32,listColW=(layout.width-pad*2)/EXPORT_COLS;r+=`<rect x="0" y="${top}" width="${layout.width}" height="${layout.listH}" fill="#f7f9f9"/><line x1="0" y1="${top}" x2="${layout.width}" y2="${top}" stroke="#cad4d5"/><text x="${pad}" y="${top+45}" fill="#0e3b43" font-size="28" font-weight="700">店家對照</text>`;for(let c=1;c<EXPORT_COLS;c++){const x=pad+c*listColW;r+=`<line x1="${x.toFixed(1)}" y1="${top+64}" x2="${x.toFixed(1)}" y2="${top+layout.listH-18}" stroke="#d8dfe0"/>`;}
+    if(!layout.shops.length)r+=`<text x="${pad}" y="${top+94}" fill="#627579" font-size="20">尚無店家資料</text>`;
+    for(let col=0;col<EXPORT_COLS;col++){const part=layout.shops.slice(col*layout.rowsPerCol,(col+1)*layout.rowsPerCol);part.forEach((sh,row)=>{const x=pad+col*listColW+9,y=top+67+row*EXPORT_LIST_ROW_H,num=numbers[sh.id],cat=catById(sh.cat),lines=wrapSvgText(sh.name,20,2);if(row)r+=`<line x1="${x.toFixed(1)}" y1="${y}" x2="${(x+listColW-24).toFixed(1)}" y2="${y}" stroke="#e1e6e7"/>`;r+=`<circle cx="${(x+19).toFixed(1)}" cy="${y+32}" r="19" fill="#0e3b43"/><text x="${(x+19).toFixed(1)}" y="${y+32}" fill="#fff" font-size="17" font-weight="700" text-anchor="middle" dominant-baseline="central">${num}</text><text x="${(x+48).toFixed(1)}" y="${y+31}" fill="#1c2b2e" font-size="22" font-weight="600">${lines.map((line,i)=>`<tspan x="${(x+48).toFixed(1)}" y="${y+31+i*26}">${xesc(line)}</tspan>`).join("")}</text><text x="${(x+48).toFixed(1)}" y="${y+91}" fill="#627579" font-size="18">${xesc(cat?cat.name:"")}</text>`;});}
   }
   return r+`</svg>`;
 }

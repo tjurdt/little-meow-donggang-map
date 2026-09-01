@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -530,16 +531,16 @@ function shopSortMetrics(id) {
   return n ? {
     id,
     firstOpenX,     // 最上位：向左延伸遇到的首個空格/牆壁之最小 x 座標
-    minY,           // 次上位：店家佔據的最小 y 座標
     minX,           // 次次上位：店家佔據的最小 x 座標
+    minY,           // 次上位：店家佔據的最小 y 座標
     averageScore: (sumX / n) + 1.01 * (sumY / n) // 最後：平均座標
   } : null;
 }
 
 function compareShops(a, b) {
   if (a.firstOpenX !== b.firstOpenX) return a.firstOpenX - b.firstOpenX; // 1. 比向左延伸 X 座標 (最上位)
-  if (a.minY !== b.minY) return a.minY - b.minY;           // 2. 比 Y 座標 (次上位)
   if (a.minX !== b.minX) return a.minX - b.minX;           // 3. 再比最小 X 座標 (次次上位)
+  if (a.minY !== b.minY) return a.minY - b.minY;           // 2. 比 Y 座標 (次上位)
   return a.averageScore - b.averageScore;                   // 4. 最後比平均座標分數
 }
 function drawLabels(ctx){

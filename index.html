@@ -504,7 +504,6 @@ function componentAnchor(cells){
 function shopLabelAnchors(id){return shopComponents(id).map(componentAnchor);}
 function shopCentroid(id){ let sr=0,sc=0,n=0; for(const k in state.cells){ if(state.cells[k].shop===id){ const [r,c]=keyRC(k); sr+=r;sc+=c;n++; } }
   return n?[sr/n,sc/n,n]:null; }
-// 1. 計算單一店家的各項排序指標
 function shopSortMetrics(id) {
   let firstOpenX = Infinity;
   let minX = Infinity;
@@ -515,7 +514,6 @@ function shopSortMetrics(id) {
     if (state.cells[k].shop !== id) continue;
     const [y, x] = keyRC(k);
 
-    // 一路向左尋找第一個非店家的格子 (x 軸座標)
     let left = x - 1;
     while (left >= 0 && (state.cells[`${y}_${left}`] || {}).shop) {
       left--;
@@ -532,18 +530,17 @@ function shopSortMetrics(id) {
   return n ? {
     id,
     firstOpenX,     // 最上位：向左延伸遇到的首個空格/牆壁之最小 x 座標
-    minY,           // 次上位：最小 y 座標
-    minX,           // 次次上位：最小 x 座標
-    averageScore: (sumX / n) + 1.01 * (sumY / n) // 最後：平均座標 (x + 1.01y)
+    minY,           // 次上位：店家佔據的最小 y 座標
+    minX,           // 次次上位：店家佔據的最小 x 座標
+    averageScore: (sumX / n) + 1.01 * (sumY / n) // 最後：平均座標
   } : null;
 }
 
-// 2. 多店家排序比較函式 (由小到大)
 function compareShops(a, b) {
-  if (a.firstOpenX !== b.firstOpenX) return a.firstOpenX - b.firstOpenX;
-  if (a.minY !== b.minY) return a.minY - b.minY;
-  if (a.minX !== b.minX) return a.minX - b.minX;
-  return a.averageScore - b.averageScore;
+  if (a.firstOpenX !== b.firstOpenX) return a.firstOpenX - b.firstOpenX; // 1. 比向左延伸 X 座標 (最上位)
+  if (a.minY !== b.minY) return a.minY - b.minY;           // 2. 比 Y 座標 (次上位)
+  if (a.minX !== b.minX) return a.minX - b.minX;           // 3. 再比最小 X 座標 (次次上位)
+  return a.averageScore - b.averageScore;                   // 4. 最後比平均座標分數
 }
 function drawLabels(ctx){
   if(!state.showLabels && !state.showNames) return;

@@ -48,11 +48,11 @@
 
   .selbar{position:absolute;left:10px;right:10px;bottom:10px;z-index:8;background:none;padding:0;display:none;flex-direction:column;gap:6px}
   .selbar.on{display:flex}
-  .selactions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;width:100%}
+  .selactions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;width:100%}
   .selbar button{min-width:0;width:100%;border-radius:9px;height:32px;padding:0 6px;font-weight:600;font-size:13px;white-space:nowrap;
     box-shadow:0 2px 10px rgba(0,0,0,.24)}
   .selbar .assign{background:var(--accent);color:#fff} .selbar .clr{background:#12525c;color:#dfeff0}.selbar .move{background:#dcebec;color:var(--ink)}
-  .selbar .erase{background:var(--accent-ink);color:#fff}
+  .selbar .erase{background:var(--accent-ink);color:#fff} .selbar .diag{background:#fff;color:var(--ink)}
   .selbar button:disabled{opacity:.5}
 
   .targetbar{position:absolute;left:10px;right:10px;top:10px;z-index:8;background:#b5401f;color:#fff;border-radius:12px;
@@ -210,7 +210,7 @@
   <div class="maphint" id="mapHint">點按多選・拖曳框選・雙指移動縮放</div>
   <div class="zoomstack"><button id="zoomIn">＋</button><button id="zoomOut">−</button></div>
   <div class="selbar" id="selbar">
-    <div class="selactions"><button class="move" id="selMove">移動</button><button class="assign" id="selAssign">編輯</button><button class="clr" id="selClr">取消選取</button><button class="erase" id="selErase">刪除標記</button></div></div>
+    <div class="selactions"><button class="move" id="selMove">移動</button><button class="assign" id="selAssign">編輯</button><button class="diag" id="selDiag">斜角</button><button class="clr" id="selClr">完成</button><button class="erase" id="selErase">刪除</button></div></div>
   <div class="targetbar" id="targetbar"><span class="grow" id="targetName"></span>
     <span style="font-size:13px;opacity:.9">點格加入/移除</span><button id="targetDone">完成</button></div>
 </div>
@@ -469,6 +469,57 @@ function pruneOrphanedShops(){const used=new Set(Object.values(state.cells).map(
 let toastTimer=null;
 function toast(msg){ const el=$("#toast"); el.textContent=msg; el.classList.add("on"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("on"),2200); }
 
+/* ---- cell shape (diagonal clip; local coords 0..1, [] = hidden) ---- */
+function cellShape(d){return d&&Array.isArray(d.poly)?d.poly:null;}
+function cellHidden(d){const p=cellShape(d);return !!p&&p.length<3;}
+function cellPath(ctx,r,c,poly){ctx.beginPath();poly.forEach((p,i)=>{const x=(c+p[0])*CW,y=(r+p[1])*CH;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.closePath();}
+function fillCell(ctx,r,c,d,color){const poly=cellShape(d);
+  if(!poly){ctx.fillStyle=color;ctx.fillRect(c*CW,r*CH,CW+0.6,CH+0.6);return;}
+  if(poly.length<3)return; ctx.fillStyle=color;cellPath(ctx,r,c,poly);ctx.fill();}
+function svgCell(r,c,poly,attrs){
+  if(!poly)return `<rect x="${(c*CW).toFixed(1)}" y="${(r*CH).toFixed(1)}" width="${CW.toFixed(1)}" height="${CH.toFixed(1)}" ${attrs}/>`;
+  if(poly.length<3)return "";
+  return `<polygon points="${poly.map(pt=>((c+pt[0])*CW).toFixed(2)+","+((r+pt[1])*CH).toFixed(2)).join(" ")}" ${attrs}/>`;}
+function clipCellByCorner(i,j,W,H,corner){
+  const f=(u,v)=>{const a=u/W,b=v/H;return corner===0?a+b-1:corner===1?b-a:corner===2?1-a-b:a-b;};
+  const src=[[0,0],[1,0],[1,1],[0,1]],out=[],E=1e-9;
+  for(let n=0;n<src.length;n++){const cur=src[n],nx=src[(n+1)%src.length],dc=f(i+cur[0],j+cur[1]),dn=f(i+nx[0],j+nx[1]);
+    if(dc<=E)out.push(cur);
+    if((dc<-E&&dn>E)||(dc>E&&dn<-E)){const t=dc/(dc-dn);out.push([cur[0]+(nx[0]-cur[0])*t,cur[1]+(nx[1]-cur[1])*t]);}}
+  return out;}
+function cellSideIntervals(d,side){ const poly=cellShape(d);
+  if(!poly)return [[0,1]]; if(poly.length<3)return [];
+  const out=[],E=1e-6;
+  for(let i=0;i<poly.length;i++){const q=poly[i],w=poly[(i+1)%poly.length];
+    if(side===0&&Math.abs(q[1])<E&&Math.abs(w[1])<E)out.push([Math.min(q[0],w[0]),Math.max(q[0],w[0])]);
+    else if(side===1&&Math.abs(q[1]-1)<E&&Math.abs(w[1]-1)<E)out.push([Math.min(q[0],w[0]),Math.max(q[0],w[0])]);
+    else if(side===2&&Math.abs(q[0])<E&&Math.abs(w[0])<E)out.push([Math.min(q[1],w[1]),Math.max(q[1],w[1])]);
+    else if(side===3&&Math.abs(q[0]-1)<E&&Math.abs(w[0]-1)<E)out.push([Math.min(q[1],w[1]),Math.max(q[1],w[1])]);}
+  return out;}
+function subtractIntervals(base,subs){ let parts=[base];
+  subs.forEach(sub=>{const next=[];parts.forEach(part=>{const a=part[0],b=part[1],s0=sub[0],s1=sub[1];
+    if(s1<=a+1e-6||s0>=b-1e-6){next.push(part);return;}
+    if(s0>a+1e-6)next.push([a,Math.min(s0,b)]); if(s1<b-1e-6)next.push([Math.max(s1,a),b]);});parts=next;});
+  return parts.filter(x=>x[1]-x[0]>1e-4);}
+function shopBorderSegments(k,d){ const [r,c]=keyRC(k),poly=cellShape(d),segs=[];
+  if(poly&&poly.length<3)return segs;
+  const pts=poly||[[0,0],[1,0],[1,1],[0,1]],E=1e-6;
+  const nbr=side=>state.cells[(r+(side===0?-1:side===1?1:0))+"_"+(c+(side===2?-1:side===3?1:0))];
+  const opp=side=>side===0?1:side===1?0:side===2?3:2;
+  for(let i=0;i<pts.length;i++){ const q=pts[i],w=pts[(i+1)%pts.length]; let side=-1;
+    if(Math.abs(q[1])<E&&Math.abs(w[1])<E)side=0; else if(Math.abs(q[1]-1)<E&&Math.abs(w[1]-1)<E)side=1;
+    else if(Math.abs(q[0])<E&&Math.abs(w[0])<E)side=2; else if(Math.abs(q[0]-1)<E&&Math.abs(w[0]-1)<E)side=3;
+    if(side<0){ segs.push([(c+q[0])*CW,(r+q[1])*CH,(c+w[0])*CW,(r+w[1])*CH]); continue; }
+    const nd=nbr(side),lo=side<2?Math.min(q[0],w[0]):Math.min(q[1],w[1]),hi=side<2?Math.max(q[0],w[0]):Math.max(q[1],w[1]);
+    const subs=(nd&&nd.shop===d.shop&&!cellHidden(nd))?cellSideIntervals(nd,opp(side)):[];
+    subtractIntervals([lo,hi],subs).forEach(part=>{ const s0=part[0],s1=part[1];
+      if(side===0)segs.push([(c+s0)*CW,r*CH,(c+s1)*CW,r*CH]);
+      else if(side===1)segs.push([(c+s0)*CW,(r+1)*CH,(c+s1)*CW,(r+1)*CH]);
+      else if(side===2)segs.push([c*CW,(r+s0)*CH,c*CW,(r+s1)*CH]);
+      else segs.push([(c+1)*CW,(r+s0)*CH,(c+1)*CW,(r+s1)*CH]); }); }
+  return segs;}
+function polyArea(poly){let a=0;for(let i=0;i<poly.length;i++){const q=poly[i],w=poly[(i+1)%poly.length];a+=q[0]*w[1]-w[0]*q[1];}return Math.abs(a)/2;}
+
 /* ---- canvas ---- */
 const base=$("#base"), overlay=$("#overlay"), bctx=base.getContext("2d"), octx=overlay.getContext("2d");
 let CW=CELLPX, CH=CELLPX;
@@ -562,16 +613,18 @@ function afterSel(){ if(activeShop){ recompute(); drawBase(); drawOverlay(); ren
 function drawBase(){ bctx.clearRect(0,0,imgW,imgH); bctx.fillStyle="#f5f7f7"; bctx.fillRect(0,0,imgW,imgH);
   const op=state.view==="plan"?0.95:0.30;
   for(const k in state.cells){ const d=state.cells[k]; if(!d.plan)continue; const z=zoneById(d.plan); if(!z)continue;
-    const [r,c]=keyRC(k); bctx.fillStyle=hexA(z.color,d.plan==="zw"?1:op); bctx.fillRect(c*CW,r*CH,CW+0.6,CH+0.6); } }
+    const [r,c]=keyRC(k);
+    if(d.plan==="zw")fillCell(bctx,r,c,d,z.color);
+    else{bctx.fillStyle=hexA(z.color,op);bctx.fillRect(c*CW,r*CH,CW+0.6,CH+0.6);} } }
 
 function drawWalls(ctx){ const color=zoneById("zw")?.color||"#3B3838";
-  for(const k in state.cells){ if(state.cells[k].plan!=="zw")continue; const [r,c]=keyRC(k); ctx.fillStyle=color; ctx.fillRect(c*CW,r*CH,CW+0.6,CH+0.6); } }
+  for(const k in state.cells){ const d=state.cells[k]; if(d.plan!=="zw")continue; const [r,c]=keyRC(k); fillCell(ctx,r,c,d,color); } }
 
 function drawOverlay(){
   octx.clearRect(0,0,imgW,imgH); const a=state.fillA/100;
   if(state.view==="actual"){
     for(const k in state.cells){ const d=state.cells[k]; if(!d.cat)continue; const c=catById(d.cat); if(!c)continue;
-      const [r,cc]=keyRC(k); octx.fillStyle=hexA(c.color,a); octx.fillRect(cc*CW,r*CH,CW+0.6,CH+0.6); }
+      const [r,cc]=keyRC(k); fillCell(octx,r,cc,d,hexA(c.color,a)); }
     drawWalls(octx);
     drawShopBorders(octx); drawLabels(octx);
   }
@@ -585,22 +638,15 @@ function drawOverlay(){
   // active or inspected shop glow
   const highlightedShop=activeShop||inspectedShop;
   if(highlightedShop){ octx.strokeStyle="#e2603f"; octx.lineWidth=CW*0.22; octx.setLineDash([CW*0.6,CW*0.4]);
-    for(const k in state.cells){ if(state.cells[k].shop===highlightedShop){ const [r,c]=keyRC(k); octx.strokeRect(c*CW+1,r*CH+1,CW-2,CH-2);} } octx.setLineDash([]); }
+    for(const k in state.cells){ const d=state.cells[k]; if(d.shop===highlightedShop&&!cellHidden(d)){ const [r,c]=keyRC(k); octx.strokeRect(c*CW+1,r*CH+1,CW-2,CH-2);} } octx.setLineDash([]); }
 }
-function drawShopBorders(ctx){ ctx.strokeStyle="rgba(20,45,50,.55)"; ctx.lineWidth=Math.max(0.8,CW*0.12);
-  for(const k in state.cells){ const d=state.cells[k]; if(!d.shop)continue; const [r,c]=keyRC(k);
-    const nb=[[r-1,c,0],[r+1,c,1],[r,c-1,2],[r,c+1,3]];
-    nb.forEach(([nr,nc,side])=>{ const nd=state.cells[nr+"_"+nc]; if(nd&&nd.shop===d.shop)return;
-      ctx.beginPath();
-      if(side===0){ctx.moveTo(c*CW,r*CH);ctx.lineTo((c+1)*CW,r*CH);}
-      else if(side===1){ctx.moveTo(c*CW,(r+1)*CH);ctx.lineTo((c+1)*CW,(r+1)*CH);}
-      else if(side===2){ctx.moveTo(c*CW,r*CH);ctx.lineTo(c*CW,(r+1)*CH);}
-      else {ctx.moveTo((c+1)*CW,r*CH);ctx.lineTo((c+1)*CW,(r+1)*CH);}
-      ctx.stroke(); }); } }
-function shopAnchor(id){ let best=null; for(const k in state.cells){ if(state.cells[k].shop===id){ const [r,c]=keyRC(k);
+function drawShopBorders(ctx){ ctx.strokeStyle="rgba(20,45,50,.55)"; ctx.lineWidth=Math.max(0.8,CW*0.12); ctx.lineCap="round";
+  for(const k in state.cells){ const d=state.cells[k]; if(!d.shop)continue;
+    shopBorderSegments(k,d).forEach(g=>{ctx.beginPath();ctx.moveTo(g[0],g[1]);ctx.lineTo(g[2],g[3]);ctx.stroke();}); } ctx.lineCap="butt"; }
+function shopAnchor(id){ let best=null; for(const k in state.cells){ if(state.cells[k].shop===id&&!cellHidden(state.cells[k])){ const [r,c]=keyRC(k);
     if(!best||r<best[0]||(r===best[0]&&c<best[1])) best=[r,c]; } } return best; }
 function shopComponents(id){
-  const pending=new Set(); for(const k in state.cells)if(state.cells[k].shop===id)pending.add(k);
+  const pending=new Set(); for(const k in state.cells)if(state.cells[k].shop===id&&!cellHidden(state.cells[k]))pending.add(k);
   const out=[];
   while(pending.size){ const first=pending.values().next().value, q=[first], cells=[]; pending.delete(first);
     while(q.length){ const k=q.pop(),[r,c]=keyRC(k); cells.push([r,c]);
@@ -617,7 +663,7 @@ function shopLabelAnchors(id){return shopComponents(id).map(componentAnchor);}
 function shopCentroid(id){ let sr=0,sc=0,n=0; for(const k in state.cells){ if(state.cells[k].shop===id){ const [r,c]=keyRC(k); sr+=r;sc+=c;n++; } }
   return n?[sr/n,sc/n,n]:null; }
 function shopSortMetrics(id){let firstOpenX=Infinity,minY=Infinity,minX=Infinity,sumX=0,sumY=0,n=0;
-  for(const k in state.cells){if(state.cells[k].shop!==id)continue;const [y,x]=keyRC(k);let left=x-1;
+  for(const k in state.cells){if(state.cells[k].shop!==id||cellHidden(state.cells[k]))continue;const [y,x]=keyRC(k);let left=x-1;
     while(left>=0&&(state.cells[y+"_"+left]||{}).shop)left--;
     firstOpenX=Math.min(firstOpenX,left);minY=Math.min(minY,y);minX=Math.min(minX,x);sumX+=x;sumY+=y;n++;}
   return n?{firstOpenX,minY,minX,averageScore:sumX/n+1.01*(sumY/n)}:null;}
@@ -644,20 +690,48 @@ function recompute(){
 function updateSelBar(){ const n=selection.size; $("#moveSelN").textContent=n;$("#selMove").disabled=!n; const on=n>0&&!activeShop; $("#selbar").classList.toggle("on",on); document.body.classList.toggle("selbar-on",on); }
 $("#selClr").onclick=()=>{ selection.clear(); updateSelBar(); drawOverlay(); };
 $("#selErase").onclick=()=>{ const total=selection.size; let changed=0,walls=0;
-  selection.forEach(k=>{ const cur=state.cells[k]; if(!cur)return; if(cur.cat||cur.shop||cur.plan==="zw")changed++;if(cur.plan==="zw")walls++;delete cur.cat; delete cur.shop;if(cur.plan==="zw")delete cur.plan;
+  selection.forEach(k=>{ const cur=state.cells[k]; if(!cur)return; if(cur.cat||cur.shop||cur.plan==="zw")changed++;if(cur.plan==="zw")walls++;delete cur.cat; delete cur.shop; delete cur.poly;if(cur.plan==="zw")delete cur.plan;
     if(!cur.plan)delete state.cells[k]; });
   selection.clear(); pruneUnusedUnnamedShops(); recompute(); save(); updateSelBar(); drawBase(); drawOverlay(); renderList();
   toast(changed?(walls?`已清除 ${changed} 格標記，其中 ${walls} 格牆壁連同底圖移除`:`已清除 ${changed} 格實際標記（其他規劃底圖保留）`):`所選 ${total} 格沒有可清除的標記`); };
 $("#selAssign").onclick=openAssign;
+/* ---- diagonal corner ---- */
+const DIAG_NAMES=["左上","右上","右下","左下"];
+let diagState={key:"",idx:-1};
+function selectionRect(){ if(!selection.size)return null; let r0=1e9,c0=1e9,r1=-1,c1=-1;
+  selection.forEach(k=>{const [r,c]=keyRC(k);r0=Math.min(r0,r);c0=Math.min(c0,c);r1=Math.max(r1,r);c1=Math.max(c1,c);});
+  const w=c1-c0+1,h=r1-r0+1; if(selection.size!==w*h)return null; return {r0,c0,r1,c1,w,h}; }
+function applyDiagonal(){
+  const rect=selectionRect();
+  if(!rect){ toast("斜角只能用在完整的矩形選取範圍"); return; }
+  const key=`${rect.r0}_${rect.c0}_${rect.r1}_${rect.c1}`;
+  if(diagState.key!==key)diagState={key,idx:-1};
+  diagState.idx=(diagState.idx+1)%5;
+  const corner=diagState.idx;
+  let touched=0;
+  for(let r=rect.r0;r<=rect.r1;r++)for(let c=rect.c0;c<=rect.c1;c++){
+    const d=state.cells[r+"_"+c]; if(!d)continue; if(!d.cat&&!d.shop&&d.plan!=="zw"){delete d.poly;continue;} touched++;
+    if(corner===4){ delete d.poly; continue; }
+    const poly=clipCellByCorner(c-rect.c0,r-rect.r0,rect.w,rect.h,corner),area=polyArea(poly);
+    if(area<=0.004)d.poly=[];
+    else if(area>=0.996)delete d.poly;
+    else d.poly=poly.map(pt=>[+pt[0].toFixed(4),+pt[1].toFixed(4)]);
+  }
+  if(!touched){ toast("所選範圍沒有可斜切的標記"); return; }
+  recompute(); save(); drawBase(); drawOverlay(); renderList();
+  if(navigator.vibrate)navigator.vibrate(10);
+  toast(corner===4?"已恢復方形":"斜角：直角在"+DIAG_NAMES[corner]);
+}
+$("#selDiag").onclick=applyDiagonal;
 const MOVE_DELTAS={up:[-1,0],down:[1,0],left:[0,-1],right:[0,1]};
 function moveSelection(dir){const delta=MOVE_DELTAS[dir];if(!delta||!selection.size)return false;const [dr,dc]=delta,keys=[...selection],targets=new Map(),actual=new Map();let hasActual=false;
-  for(const k of keys){const [r,c]=keyRC(k),nr=r+dr,nc=c+dc;if(nr<0||nr>=GRID_H||nc<0||nc>=GRID_W){toast("已到達網格邊界");return false;}const nk=nr+"_"+nc,d=state.cells[k]||{};targets.set(k,nk);actual.set(k,{cat:d.cat,shop:d.shop});if(d.cat||d.shop)hasActual=true;}
+  for(const k of keys){const [r,c]=keyRC(k),nr=r+dr,nc=c+dc;if(nr<0||nr>=GRID_H||nc<0||nc>=GRID_W){toast("已到達網格邊界");return false;}const nk=nr+"_"+nc,d=state.cells[k]||{};targets.set(k,nk);actual.set(k,{cat:d.cat,shop:d.shop,poly:d.poly});if(d.cat||d.shop)hasActual=true;}
   if(!hasActual){toast("所選區域沒有可移動的實際標記（牆壁不能移動）");return false;}
   for(const k of keys){const d=actual.get(k),dest=state.cells[targets.get(k)];if((d.cat||d.shop)&&dest?.plan==="zw"){toast("牆壁不能被覆蓋或移動");return false;}}
   const next={};for(const k in state.cells)next[k]={...state.cells[k]};
-  keys.forEach(k=>{const d=next[k];if(!d)return;delete d.cat;delete d.shop;if(!d.plan)delete next[k];});
-  keys.forEach(k=>{const nk=targets.get(k),d=next[nk];if(!d)return;delete d.cat;delete d.shop;if(!d.plan)delete next[nk];});
-  keys.forEach(k=>{const moved=actual.get(k);if(!moved.cat&&!moved.shop)return;const nk=targets.get(k),d=next[nk]||{};if(moved.cat)d.cat=moved.cat;if(moved.shop)d.shop=moved.shop;next[nk]=d;});
+  keys.forEach(k=>{const d=next[k];if(!d)return;delete d.cat;delete d.shop;delete d.poly;if(!d.plan)delete next[k];});
+  keys.forEach(k=>{const nk=targets.get(k),d=next[nk];if(!d)return;delete d.cat;delete d.shop;delete d.poly;if(!d.plan)delete next[nk];});
+  keys.forEach(k=>{const moved=actual.get(k);if(!moved.cat&&!moved.shop)return;const nk=targets.get(k),d=next[nk]||{};if(moved.cat)d.cat=moved.cat;if(moved.shop)d.shop=moved.shop;if(moved.poly)d.poly=moved.poly;next[nk]=d;});
   state.cells=next;selection=new Set(keys.map(k=>targets.get(k)));if(cellKey&&targets.has(cellKey))cellKey=targets.get(cellKey);pruneOrphanedShops();recompute();save();updateSelBar();drawBase();drawOverlay();renderList();if(navigator.vibrate)navigator.vibrate(12);return true;}
 $("#selMove").onclick=()=>{if(!selection.size)return;$("#moveSelN").textContent=selection.size;openSheet("moveSheet");};
 document.querySelectorAll("[data-move]").forEach(b=>b.onclick=()=>moveSelection(b.dataset.move));
@@ -702,7 +776,7 @@ $("#asgApply").onclick=()=>{
   if(!sh){ sh={id:uid("s"),name,cat:catId}; state.shops.push(sh);}
   else { sh.name=name; sh.cat=catId; for(const k in state.cells)if(state.cells[k].shop===sh.id)state.cells[k].cat=catId; }
   const shopId=sh.id; lastShopName=name; state.lastShopId=sh.id;
-  selection.forEach(k=>{ const cur=state.cells[k]||{};if(cur.plan==="zw")delete cur.plan;cur.cat=catId; if(shopId)cur.shop=shopId; else delete cur.shop;
+  selection.forEach(k=>{ const cur=state.cells[k]||{};if(cur.plan==="zw")delete cur.plan;if(cellHidden(cur))delete cur.poly;cur.cat=catId; if(shopId)cur.shop=shopId; else delete cur.shop;
     if(cur.plan||cur.cat||cur.shop)state.cells[k]=cur; else delete state.cells[k]; });
   selection.clear(); pruneUnusedUnnamedShops(); recompute(); save(); closeSheet("assignSheet"); updateSelBar(); drawBase(); drawOverlay(); renderList();
 };
@@ -720,7 +794,7 @@ $("#cellCancel").onclick=()=>closeSheet("cellSheet");
 $("#cellClear").onclick=()=>{ if(cellKey){delete state.cells[cellKey]; pruneUnusedUnnamedShops(); recompute(); save(); closeSheet("cellSheet"); drawBase(); drawOverlay(); renderList();} };
 $("#cellSave").onclick=()=>{ if(!cellKey)return; const cur=state.cells[cellKey]||{};
   const pz=$("#cellZone").dataset.sel||"", cc=$("#cellCat").dataset.sel||"", nm=$("#cellShop").value.trim();
-  if(cc==="c10"||(pz==="zw"&&!cc&&!nm)){cur.plan="zw";delete cur.cat;delete cur.shop;state.cells[cellKey]=cur;pruneOrphanedShops();recompute();save();closeSheet("cellSheet");drawBase();drawOverlay();renderList();toast("已設為牆壁");return;}
+  if(cc==="c10"||(pz==="zw"&&!cc&&!nm)){cur.plan="zw";delete cur.cat;delete cur.shop;delete cur.poly;state.cells[cellKey]=cur;pruneOrphanedShops();recompute();save();closeSheet("cellSheet");drawBase();drawOverlay();renderList();toast("已設為牆壁");return;}
   if(pz&&pz!=="zw")cur.plan=pz; else delete cur.plan; if(cc&&cc!=="c10")cur.cat=cc; else delete cur.cat;
   if(cc||nm){ let sh=nm?state.shops.find(x=>x.name===nm):null; const catId=cc||sh?.cat||state.cats[0]?.id, name=nm||nextUnnamedName(catId);
     if(!sh){sh={id:uid("s"),name,cat:catId};state.shops.push(sh);}
@@ -730,7 +804,7 @@ $("#cellSave").onclick=()=>{ if(!cellKey)return; const cur=state.cells[cellKey]|
   pruneUnusedUnnamedShops(); recompute(); save(); closeSheet("cellSheet"); drawBase(); drawOverlay(); renderList(); };
 
 /* ---- shop list ---- */
-function shopCount(id){ let n=0; for(const k in state.cells) if(state.cells[k].shop===id)n++; return n; }
+function shopCount(id){ let n=0; for(const k in state.cells){const d=state.cells[k]; if(d.shop===id&&!cellHidden(d))n++;} return n; }
 function clearShopInspection(clearSearch=true){inspectedShop=null;if(clearSearch){shopFilter="";const search=$("#shopSearch");if(search)search.value="";}}
 function inspectShopFromMap(id){const sh=shopById(id);if(!sh)return;if(inspectedShop===id){clearShopInspection();drawOverlay();renderList();if(!state.listCollapsed){state.listCollapsed=true;persistState();syncListCollapse(true);}return;}activeShop=null;$("#targetbar").classList.remove("on");selection.clear();updateSelBar();inspectedShop=id;shopFilter="";$("#shopSearch").value=sh.name;if(state.listCollapsed){state.listCollapsed=false;persistState();syncListCollapse(true);}drawOverlay();renderList();}
 function renderList(){
@@ -872,8 +946,8 @@ function drawExportList(ctx,layout){ if(!layout.includeList)return; const top=la
       ctx.fillStyle="#1c2b2e";ctx.font="600 27px 'Noto Sans TC',sans-serif";ctx.textAlign="left";ctx.textBaseline="alphabetic";lines.forEach((line,i)=>ctx.fillText(line,x+50,nameY+i*28,colW-70));
       ctx.fillStyle="#53676b";ctx.font="21px 'Noto Sans TC',sans-serif";ctx.fillText(cat?cat.name:"",x+50,catY,colW-70);y+=height;}); } }
 function renderComposite(ctx,scale,opts={}){ const layout=exportLayout(opts); ctx.save();ctx.scale(scale,scale);ctx.fillStyle="#fff";ctx.fillRect(0,0,layout.width,layout.totalH);ctx.save();ctx.translate(layout.padX,layout.padY);
-  if(layout.mode==="plan"||layout.mode==="overlay")for(const k in state.cells){const d=state.cells[k];if(!d.plan)continue;const z=zoneById(d.plan);if(!z)continue;const [r,c]=keyRC(k),opacity=d.plan==="zw"?1:layout.baseOpacity/100;ctx.fillStyle=hexA(z.color,opacity);ctx.fillRect(c*CW,r*CH,CW+.6,CH+.6);}
-  if(layout.mode!=="plan"){const a=state.fillA/100;for(const k in state.cells){const d=state.cells[k];if(!d.cat)continue;const cat=catById(d.cat);if(!cat)continue;const [r,c]=keyRC(k);ctx.fillStyle=hexA(cat.color,a);ctx.fillRect(c*CW,r*CH,CW+.6,CH+.6);}}
+  if(layout.mode==="plan"||layout.mode==="overlay")for(const k in state.cells){const d=state.cells[k];if(!d.plan)continue;const z=zoneById(d.plan);if(!z)continue;const [r,c]=keyRC(k),opacity=d.plan==="zw"?1:layout.baseOpacity/100;if(d.plan==="zw")fillCell(ctx,r,c,d,hexA(z.color,opacity));else{ctx.fillStyle=hexA(z.color,opacity);ctx.fillRect(c*CW,r*CH,CW+.6,CH+.6);}}
+  if(layout.mode!=="plan"){const a=state.fillA/100;for(const k in state.cells){const d=state.cells[k];if(!d.cat)continue;const cat=catById(d.cat);if(!cat)continue;const [r,c]=keyRC(k);fillCell(ctx,r,c,d,hexA(cat.color,a));}}
   drawWalls(ctx);
   if(layout.mode!=="plan")drawShopBorders(ctx);
   if(state.showGrid){ctx.lineWidth=Math.max(.4,CW*.04);ctx.strokeStyle="rgba(20,50,55,.13)";ctx.beginPath();for(let c=0;c<=GRID_W;c++){ctx.moveTo(c*CW,0);ctx.lineTo(c*CW,imgH);}for(let r=0;r<=GRID_H;r++){ctx.moveTo(0,r*CH);ctx.lineTo(imgW,r*CH);}ctx.stroke();}
@@ -904,10 +978,11 @@ $("#expXLSX").onclick=()=>{ const x=exportXlsxBytes(); dl(new Blob([x],{type:"ap
 
 function wrapSvgText(text,maxChars,maxLines=2){const chars=Array.from(String(text||"")),lines=[];for(let i=0;i<chars.length&&lines.length<maxLines;i+=maxChars)lines.push(chars.slice(i,i+maxChars).join(""));if(lines.join("").length<chars.length&&lines.length)lines[lines.length-1]=lines[lines.length-1].slice(0,-1)+"…";return lines.length?lines:[""];}
 function buildSVG(opts={}){ const layout=exportLayout(opts);let r=`<svg xmlns="http://www.w3.org/2000/svg" width="${layout.width}" height="${layout.totalH}" viewBox="0 0 ${layout.width} ${layout.totalH}" font-family="'Noto Sans TC',sans-serif"><rect width="${layout.width}" height="${layout.totalH}" fill="#fff"/><g transform="translate(${layout.padX} ${layout.padY})">`;
-  if(layout.mode==="plan"||layout.mode==="overlay")for(const k in state.cells){const d=state.cells[k];if(!d.plan)continue;const z=zoneById(d.plan);if(!z)continue;const [rr,c]=keyRC(k),opacity=d.plan==="zw"?1:layout.baseOpacity/100;r+=`<rect x="${(c*CW).toFixed(1)}" y="${(rr*CH).toFixed(1)}" width="${CW.toFixed(1)}" height="${CH.toFixed(1)}" fill="${z.color}" fill-opacity="${opacity}"/>`;}
-  if(layout.mode!=="plan"){const a=state.fillA/100;for(const k in state.cells){const d=state.cells[k];if(!d.cat)continue;const cat=catById(d.cat);if(!cat)continue;const [rr,c]=keyRC(k);r+=`<rect x="${(c*CW).toFixed(1)}" y="${(rr*CH).toFixed(1)}" width="${CW.toFixed(1)}" height="${CH.toFixed(1)}" fill="${cat.color}" fill-opacity="${a}"/>`;}}
-  const wallColor=zoneById("zw")?.color||"#3B3838";for(const k in state.cells){if(state.cells[k].plan!=="zw")continue;const [rr,c]=keyRC(k);r+=`<rect class="wall" x="${(c*CW).toFixed(1)}" y="${(rr*CH).toFixed(1)}" width="${CW.toFixed(1)}" height="${CH.toFixed(1)}" fill="${wallColor}"/>`;}
-  if(layout.mode!=="plan")for(const k in state.cells){const d=state.cells[k];if(!d.shop)continue;const [rr,c]=keyRC(k),seg=[];if((state.cells[(rr-1)+"_"+c]||{}).shop!==d.shop)seg.push([c*CW,rr*CH,(c+1)*CW,rr*CH]);if((state.cells[(rr+1)+"_"+c]||{}).shop!==d.shop)seg.push([c*CW,(rr+1)*CH,(c+1)*CW,(rr+1)*CH]);if((state.cells[rr+"_"+(c-1)]||{}).shop!==d.shop)seg.push([c*CW,rr*CH,c*CW,(rr+1)*CH]);if((state.cells[rr+"_"+(c+1)]||{}).shop!==d.shop)seg.push([(c+1)*CW,rr*CH,(c+1)*CW,(rr+1)*CH]);seg.forEach(g=>r+=`<line x1="${g[0].toFixed(1)}" y1="${g[1].toFixed(1)}" x2="${g[2].toFixed(1)}" y2="${g[3].toFixed(1)}" stroke="#142d32" stroke-opacity=".55" stroke-width="${(CW*.12).toFixed(1)}"/>`);}
+  if(layout.mode==="plan"||layout.mode==="overlay")for(const k in state.cells){const d=state.cells[k];if(!d.plan)continue;const z=zoneById(d.plan);if(!z)continue;const [rr,c]=keyRC(k),opacity=d.plan==="zw"?1:layout.baseOpacity/100;r+=svgCell(rr,c,d.plan==="zw"?cellShape(d):null,`fill="${z.color}" fill-opacity="${opacity}"`);}
+  if(layout.mode!=="plan"){const a=state.fillA/100;for(const k in state.cells){const d=state.cells[k];if(!d.cat)continue;const cat=catById(d.cat);if(!cat)continue;const [rr,c]=keyRC(k);r+=svgCell(rr,c,cellShape(d),`fill="${cat.color}" fill-opacity="${a}"`);}}
+  const wallColor=zoneById("zw")?.color||"#3B3838";for(const k in state.cells){const d=state.cells[k];if(d.plan!=="zw")continue;const [rr,c]=keyRC(k);r+=svgCell(rr,c,cellShape(d),`class="wall" fill="${wallColor}"`);}
+  if(layout.mode!=="plan")for(const k in state.cells){const d=state.cells[k];if(!d.shop)continue;
+    shopBorderSegments(k,d).forEach(g=>r+=`<line x1="${g[0].toFixed(2)}" y1="${g[1].toFixed(2)}" x2="${g[2].toFixed(2)}" y2="${g[3].toFixed(2)}" stroke="#142d32" stroke-opacity=".55" stroke-width="${(CW*.12).toFixed(1)}" stroke-linecap="round"/>`);}
   if(state.showGrid){r+=`<g stroke="#143237" stroke-opacity=".13" stroke-width="0.5">`;for(let c=0;c<=GRID_W;c++)r+=`<line x1="${(c*CW).toFixed(1)}" y1="0" x2="${(c*CW).toFixed(1)}" y2="${imgH}"/>`;for(let rr=0;rr<=GRID_H;rr++)r+=`<line x1="0" y1="${(rr*CH).toFixed(1)}" x2="${imgW}" y2="${(rr*CH).toFixed(1)}"/>`;r+=`</g>`;}
   if(layout.mode!=="plan"&&!layout.omitShopLabels)layout.shops.forEach(sh=>{const num=numbers[sh.id];shopLabelAnchors(sh.id).forEach(anchor=>{const cx=(anchor[1]+.5)*CW,cy=(anchor[0]+.5)*CH;r+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${(CH*.75).toFixed(1)}" fill="#0e3b43"/><text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" fill="#fff" font-size="${(CH*.9).toFixed(1)}" font-weight="700" text-anchor="middle" dominant-baseline="central">${num}</text>`;});});
   r+=`</g>`;

@@ -239,6 +239,8 @@
 <!-- assign sheet -->
 <div class="sheet" id="assignSheet">
   <h3 id="assignTitle">指定分類與店家</h3>
+  <div class="fld" id="asgInheritWrap" hidden><label>沿用選取範圍內的既有標記</label>
+    <div class="catpick chiprow" id="asgInherit"></div></div>
   <div class="fld"><label>分類</label><select id="asgCat"></select></div>
   <div id="asgStoreFields">
     <div class="fld"><label>店家名稱（留空會自動命名）</label>
@@ -761,13 +763,32 @@ function refreshShopDatalist(){ const dl=$("#shopNames"); dl.innerHTML=""; state
 function refreshExistingSelect(val=""){ const sel=$("#asgExisting"); sel.innerHTML='<option value="">選擇既有店家…</option>';
   [...state.shops].sort((a,b)=>a.name.localeCompare(b.name,"zh-Hant")).forEach(sh=>{const o=document.createElement("option");o.value=sh.id;o.textContent=sh.name;sel.appendChild(o);}); sel.value=val; }
 function syncAssignWallMode(){const wall=$("#asgCat").value==="c10";$("#asgStoreFields").hidden=wall;[$("#asgShop"),$("#asgExisting"),$("#asgDitto")].forEach(el=>el.disabled=wall);if(wall){$("#asgShop").value="";$("#asgExisting").value="";}$("#assignTitle").textContent=wall?"新增牆壁":"指定分類與店家";}
+function selectionMarks(){ const map=new Map();
+  selection.forEach(k=>{ const d=state.cells[k]; if(!d||cellHidden(d))return;
+    if(d.shop&&shopById(d.shop)){ const e=map.get("s:"+d.shop)||{type:"shop",id:d.shop,n:0}; e.n++; map.set("s:"+d.shop,e); }
+    else if(d.cat&&catById(d.cat)){ const e=map.get("c:"+d.cat)||{type:"cat",id:d.cat,n:0}; e.n++; map.set("c:"+d.cat,e); } });
+  return [...map.values()].sort((a,b)=>b.n-a.n); }
+function applyInheritEntry(entry){
+  if(entry.type==="shop"){ const sh=shopById(entry.id); if(!sh)return; $("#asgCat").value=sh.cat; $("#asgShop").value=sh.name; $("#asgExisting").value=sh.id; }
+  else { $("#asgCat").value=entry.id; $("#asgShop").value=""; $("#asgExisting").value=""; }
+  syncAssignWallMode(); }
+function renderInheritChips(){ const marks=selectionMarks(),host=$("#asgInherit"),wrap=$("#asgInheritWrap");
+  host.innerHTML=""; wrap.hidden=!marks.length; if(!marks.length)return;
+  marks.forEach((entry,i)=>{ const cat=catById(entry.type==="shop"?shopById(entry.id)?.cat:entry.id);
+    const label=entry.type==="shop"?(shopById(entry.id)?.name||""):(cat?.name||"")+"（未命名）";
+    const b=document.createElement("button"); b.type="button"; b.className=marks.length===1?"on":"";
+    b.innerHTML=`<span class="sw" style="background:${cat?cat.color:"#ccc"}"></span>${esc(label)} <span style="color:var(--muted);font-weight:500">${entry.n}格</span>`;
+    b.onclick=()=>{ [...host.children].forEach(x=>x.classList.remove("on")); b.classList.add("on"); applyInheritEntry(entry); };
+    host.appendChild(b); });
+  if(marks.length===1)applyInheritEntry(marks[0]); }
 function openAssign(){ if(!selection.size)return; if(state.cats.length===0){ toast("尚無可用分類"); return; }
-  fillCatSelect($("#asgCat")); refreshShopDatalist(); refreshExistingSelect(); $("#asgShop").value="";syncAssignWallMode(); openSheet("assignSheet"); }
+  fillCatSelect($("#asgCat")); refreshShopDatalist(); refreshExistingSelect(); $("#asgShop").value="";syncAssignWallMode(); renderInheritChips(); openSheet("assignSheet"); }
 $("#asgCat").onchange=syncAssignWallMode;
 $("#asgDitto").onclick=()=>{ if(!lastShopName){toast("尚無上一個店家");return;} const sh=state.shops.find(x=>x.name===lastShopName);
   $("#asgShop").value=lastShopName; if(sh){$("#asgExisting").value=sh.id;$("#asgCat").value=sh.cat;} };
 $("#asgExisting").onchange=e=>{ const sh=shopById(e.target.value); if(!sh)return; $("#asgShop").value=sh.name; $("#asgCat").value=sh.cat;syncAssignWallMode(); };
-$("#asgShop").oninput=()=>{ const sh=state.shops.find(x=>x.name===$("#asgShop").value.trim()); $("#asgExisting").value=sh?sh.id:""; if(sh)$("#asgCat").value=sh.cat; };
+$("#asgShop").oninput=()=>{ const sh=state.shops.find(x=>x.name===$("#asgShop").value.trim()); $("#asgExisting").value=sh?sh.id:""; if(sh)$("#asgCat").value=sh.cat;
+  [...$("#asgInherit").children].forEach(x=>x.classList.remove("on")); };
 $("#asgCancel").onclick=()=>closeSheet("assignSheet");
 $("#asgApply").onclick=()=>{
   const catId=$("#asgCat").value,typedName=$("#asgShop").value.trim(),name=typedName||nextUnnamedName(catId);

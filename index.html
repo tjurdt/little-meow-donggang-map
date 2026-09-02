@@ -14,19 +14,24 @@
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;font-size:15px}
   input,select{font-family:inherit;font-size:16px;-webkit-user-select:text;user-select:text}
 
-  header{background:var(--ink);color:#eaf3f3;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;display:flex;align-items:center;gap:8px;flex:0 0 auto}
+  header{background:var(--ink);color:#eaf3f3;padding:calc(5px + env(safe-area-inset-top)) 12px 5px;display:flex;align-items:center;gap:8px;flex:0 0 auto}
   header h1{font-size:15px;font-weight:600;margin:0;white-space:nowrap}
   header .spacer{flex:1}
-  .icnbtn{background:#12525c;border:1px solid #2c6169;color:#eaf3f3;border-radius:8px;height:38px;padding:0 12px;display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:500}
+  .icnbtn{background:#12525c;border:1px solid #2c6169;color:#eaf3f3;border-radius:7px;height:32px;padding:0 10px;display:inline-flex;align-items:center;gap:5px;font-size:14px;font-weight:500}
+  .ic{width:15px;height:15px;flex:0 0 auto;display:block}
   .seg{display:inline-flex;border:1px solid #2c6169;border-radius:8px;overflow:hidden}
-  .seg button{padding:0 14px;height:38px;background:#0e3b43;color:#cfe6e6;font-weight:600;font-size:14px}
+  .seg button{padding:0 14px;height:32px;background:#0e3b43;color:#cfe6e6;font-weight:600;font-size:14px}
   .seg button.on{background:#eaf3f3;color:var(--ink)}
 
-  .topbar{background:var(--panel);border-bottom:1px solid var(--line);padding:7px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:0 0 auto}
-  .topbar .seg{border-color:var(--line-strong)}
-  .topbar .seg button{background:#fff;color:var(--ink)} .topbar .seg button.on{background:var(--ink);color:#fff}
+  .topbar{background:var(--panel);border-bottom:1px solid var(--line);padding:5px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:0 0 auto}
+  .topbar>*{flex:0 0 auto}.topbar .spacer{flex:1 1 auto;min-width:0}
+  .topbar button{white-space:nowrap;flex:0 0 auto;font-size:13px}
+  .topbar .seg button{padding:0 7px;gap:4px;display:inline-flex;align-items:center;justify-content:center}.topbar .minibtn{padding:0 7px;gap:4px}
+  .topbar .seg{border-color:var(--line-strong);background:none}
+  .topbar .seg button{background:none;color:var(--ink)} .topbar .seg button.on{background:var(--ink);color:#fff}
   .topbar .seg.view button.on{background:var(--accent);color:#fff}
-  .minibtn{height:38px;border:1px solid var(--line-strong);border-radius:8px;background:#fff;color:var(--ink);padding:0 12px;font-weight:500;font-size:14px;display:inline-flex;align-items:center;gap:5px}
+  .topbar .minibtn{background:none}
+  .minibtn{height:32px;border:1px solid var(--line-strong);border-radius:8px;background:#fff;color:var(--ink);padding:0 12px;font-weight:500;font-size:14px;display:inline-flex;align-items:center;gap:5px}
   .spacer{flex:1}
 
   .stagewrap{position:relative;flex:1 1 auto;overflow:hidden;background:#e9edec;touch-action:none;min-height:0}
@@ -41,13 +46,14 @@
   .zoomstack{position:absolute;right:10px;top:10px;z-index:8;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line-strong);border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.12)}
   .zoomstack button{width:44px;height:42px;font-size:20px;color:var(--ink)} .zoomstack button+button{border-top:1px solid var(--line)}
 
-  .selbar{position:absolute;left:10px;right:66px;bottom:10px;z-index:8;background:var(--ink);color:#eaf3f3;border-radius:12px;
-    padding:8px 10px;display:none;align-items:center;gap:8px;box-shadow:0 3px 12px rgba(0,0,0,.22)}
+  .selbar{position:absolute;left:10px;right:10px;bottom:10px;z-index:8;background:none;padding:0;display:none;flex-direction:column;gap:6px}
   .selbar.on{display:flex}
-  .selbar .n{font-weight:700;font-variant-numeric:tabular-nums} .selbar .grow{flex:1}
-  .selbar button{border-radius:8px;height:38px;padding:0 12px;font-weight:600;font-size:14px}
+  .selactions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;width:100%}
+  .selbar button{min-width:0;width:100%;border-radius:9px;height:32px;padding:0 6px;font-weight:600;font-size:13px;white-space:nowrap;
+    box-shadow:0 2px 10px rgba(0,0,0,.24)}
   .selbar .assign{background:var(--accent);color:#fff} .selbar .clr{background:#12525c;color:#dfeff0}.selbar .move{background:#dcebec;color:var(--ink)}
-  .selbar .erase{background:#fff;color:var(--accent-ink)}
+  .selbar .erase{background:var(--accent-ink);color:#fff}
+  .selbar button:disabled{opacity:.5}
 
   .targetbar{position:absolute;left:10px;right:10px;top:10px;z-index:8;background:#b5401f;color:#fff;border-radius:12px;
     padding:8px 12px;display:none;align-items:center;gap:8px;box-shadow:0 3px 12px rgba(0,0,0,.22)}
@@ -57,20 +63,32 @@
   .maphint{position:absolute;left:10px;top:10px;z-index:7;background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:999px;
     padding:6px 10px;color:var(--muted);font-size:12px;box-shadow:0 2px 7px rgba(0,0,0,.08);pointer-events:none;white-space:nowrap}
 
-  /* collapsible legend between map and list */
-  .legendwrap{flex:0 0 auto;background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-  .legendtoggle{width:100%;height:44px;padding:0 12px;display:flex;align-items:center;gap:9px;color:var(--ink);font-weight:700;text-align:left}
-  .legendicon{width:18px;height:18px;border-radius:50%;flex:0 0 auto;background:conic-gradient(#ed7d31 0 25%,#70ad47 0 50%,#2e75b6 0 75%,#9966ff 0);border:2px solid #fff;box-shadow:0 0 0 1px var(--line-strong)}
-  .legendtoggle .grow{flex:1}.legendtoggle .layer{font-size:12px;color:var(--muted);font-weight:500}
-  .legendchev{font-size:15px;color:var(--muted);transition:transform .18s}.legendwrap.open .legendchev{transform:rotate(180deg)}
-  .legendgrid{display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 14px;padding:10px 12px 12px;max-height:22dvh;overflow:auto;-webkit-overflow-scrolling:touch;border-top:1px solid var(--line)}
-  .legendwrap.open .legendgrid{display:grid}
+  /* floating legend over the map */
+  .legendicon{width:16px;height:16px;border-radius:50%;flex:0 0 auto;background:conic-gradient(#ed7d31 0 25%,#70ad47 0 50%,#2e75b6 0 75%,#9966ff 0);border:2px solid #fff;box-shadow:0 0 0 1px var(--line-strong)}
+  .legendlayer{position:relative;height:0;flex:0 0 auto;z-index:9}
+  .fabrow{position:absolute;right:10px;bottom:10px;z-index:8;display:flex;gap:8px;align-items:center}
+  .legendfab{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 13px;
+    background:#fff;border:1px solid var(--line-strong);border-radius:19px;box-shadow:0 2px 9px rgba(0,0,0,.16);color:var(--ink);font-size:13px;font-weight:700}
+  .legendfab.hidden{display:none}
+  .fabicon{width:38px;padding:0;justify-content:center;font-size:19px;line-height:1}
+  .fabicon:disabled{opacity:.35}
+  .legendfab .cnt{color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+  body.selbar-on .fabrow{bottom:52px}
+  .legendpanel{position:absolute;left:10px;right:10px;bottom:10px;z-index:9;display:none;flex-direction:column;background:#fff;
+    border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 5px 20px rgba(0,0,0,.2);max-height:46dvh;overflow:hidden}
+  .legendpanel.open{display:flex}
+  .legendhead{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;border-bottom:1px solid var(--line);color:var(--ink);font-weight:700;font-size:14px}
+  .legendhead .grow{flex:1}.legendhead .layer{font-size:12px;color:var(--muted);font-weight:500}
+  .legendhead .sheetx{position:static;flex:0 0 auto}
+  .legendgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 14px;padding:10px 12px 12px;overflow:auto;-webkit-overflow-scrolling:touch}
+  .sheetx{position:absolute;top:10px;right:10px;z-index:2;width:30px;height:30px;border-radius:15px;display:grid;place-items:center;
+    background:#f1f4f4;border:1px solid var(--line);color:var(--muted);font-size:14px;line-height:1}
   .legenditem{display:flex;align-items:flex-start;gap:8px;min-width:0;font-size:13px;line-height:1.35}
   .legendsw{width:18px;height:18px;border-radius:5px;flex:0 0 auto;border:1px solid rgba(0,0,0,.16)}
 
   /* bottom shop list */
   .listwrap{flex:0 0 auto;background:var(--panel);border-top:1px solid var(--line);display:flex;flex-direction:column;max-height:40dvh;padding-bottom:env(safe-area-inset-bottom)}
-  .listwrap.collapsed .listtools,.listwrap.collapsed .shoplist{display:none}
+  .listwrap.collapsed{display:none}
   .listhead{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);min-height:50px}
   .listhead b{font-size:14px} .listhead .cnt{color:var(--muted);font-size:13px}
   .listhead .grow{flex:1}
@@ -94,7 +112,7 @@
     box-shadow:0 -6px 24px rgba(0,0,0,.16);padding:16px 16px calc(16px + env(safe-area-inset-bottom));transform:translateY(120%);
     transition:transform .2s;max-width:680px;margin:0 auto;border-radius:16px 16px 0 0;max-height:86dvh;overflow:auto}
   .sheet.open{transform:translateY(0)}
-  .sheet h3{margin:0 0 12px;font-size:16px}
+  .sheet h3{margin:0 0 12px;font-size:16px;padding-right:34px}
   .sheet .fld{margin-bottom:12px}
   .sheet .fld label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
   .sheet select,.sheet input[type=text],.sheet input[type=number]{width:100%;padding:11px;border:1px solid var(--line-strong);border-radius:9px;background:#fff}
@@ -128,8 +146,8 @@
 
   .modal-bg{position:fixed;inset:0;background:rgba(14,59,67,.45);z-index:70;display:none;align-items:flex-start;justify-content:center;padding:22px 14px;overflow:auto}
   .modal-bg.open{display:flex}
-  .modal{background:#fff;border-radius:14px;max-width:520px;width:100%;padding:18px}
-  .modal h2{margin:0 0 6px;font-size:16px}
+  .modal{position:relative;background:#fff;border-radius:14px;max-width:520px;width:100%;padding:18px}
+  .modal h2{margin:0 0 6px;font-size:16px;padding-right:34px}
   .hint{font-size:12px;color:var(--muted);margin:2px 0 12px}
   .catlist{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
   .catrow{display:flex;align-items:center;gap:9px}
@@ -155,12 +173,12 @@
 
   @media (max-width:600px){
     header h1{font-size:14px;overflow:hidden;text-overflow:ellipsis}
-    .icnbtn{height:42px;padding:0 11px}.topbar{padding:6px 8px;gap:6px;flex-wrap:nowrap;overflow-x:auto}
-    .topbar .seg button{height:42px;padding:0 12px}.minibtn{height:42px;padding:0 11px}
+    .icnbtn{height:32px;padding:0 10px}.topbar{padding:5px 6px;gap:5px;flex-wrap:nowrap;overflow-x:auto}
+    .topbar{padding:5px 5px;gap:4px}.topbar .seg button{height:34px;padding:0 8px}.topbar .minibtn{height:34px;padding:0 8px}
     .zoomstack{right:8px;top:8px}.zoomstack button{width:48px;height:48px}.fab-col{right:8px;bottom:8px}.fab{width:50px;height:50px;border-radius:25px}
-    .selbar{left:8px;right:66px;bottom:8px;padding:7px 8px}.selbar button{height:42px;padding:0 9px}.selbar .clr{display:none}
+    .selbar{left:8px;right:8px;bottom:8px;padding:0}.selbar button{height:34px;padding:0 4px;font-size:13px}
     .targetbar{left:8px;right:8px;top:8px}.maphint{left:8px;top:8px;max-width:calc(100% - 78px);overflow:hidden;text-overflow:ellipsis}
-    .legendgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 10px;padding:10px;max-height:22dvh}.legendtoggle{height:46px;padding:0 10px}
+    .legendgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 10px;padding:10px}.fabrow{right:8px;bottom:8px}.legendpanel{left:8px;right:8px;bottom:8px}body.selbar-on .fabrow{bottom:50px}
     .listwrap{max-height:42dvh}.shopitem .meta{max-width:34vw;overflow:hidden;text-overflow:ellipsis}
     .sheet{padding:15px 14px calc(15px + env(safe-area-inset-bottom));max-height:92dvh}.sh-btns .btn{min-height:48px}
   }
@@ -169,20 +187,21 @@
 <body>
 <header>
   <h1>華僑市場店家調查</h1><div class="spacer"></div>
-  <button class="icnbtn" id="btnExport">匯出</button>
-  <button class="icnbtn" id="btnMenu">⋯</button>
+  <button class="icnbtn" id="btnExport"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V3.5"/><path d="M7.8 7.7L12 3.5l4.2 4.2"/><path d="M4 15.5v3.6a1.4 1.4 0 0 0 1.4 1.4h13.2a1.4 1.4 0 0 0 1.4-1.4v-3.6"/></svg>匯出</button>
+  <button class="icnbtn" id="btnMenu"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.6v2.6M12 18.8v2.6M2.6 12h2.6M18.8 12h2.6M5.3 5.3l1.9 1.9M16.8 16.8l1.9 1.9M18.7 5.3l-1.9 1.9M7.2 16.8l-1.9 1.9"/></svg>設定</button>
 </header>
 
 <div class="topbar">
   <div class="seg" id="modeSeg">
-    <button data-m="assign" class="on">框選</button>
-    <button data-m="view">移動</button>
+    <button data-m="assign" class="on"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20.5h4L20 8.5l-4-4L4 16.5v4z"/><path d="M14.5 6l4 4"/></svg>編輯</button>
+    <button data-m="view"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="3"/></svg>查看</button>
   </div>
   <div class="seg view" id="viewSeg">
     <button data-v="plan">規劃</button>
     <button data-v="actual" class="on">實際</button>
   </div>
   <div class="spacer"></div>
+  <button class="minibtn" id="btnCats"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5V4.5h6l10 10-6 6-10-10z"/><circle cx="7.7" cy="8.3" r="1.2"/></svg>分類</button>
   <button class="minibtn" id="btnFit">全覽</button>
 </div>
 
@@ -190,24 +209,30 @@
   <div id="cstage"><canvas id="base"></canvas><canvas id="overlay"></canvas></div>
   <div class="maphint" id="mapHint">點按多選・拖曳框選・雙指移動縮放</div>
   <div class="zoomstack"><button id="zoomIn">＋</button><button id="zoomOut">−</button></div>
-  <div class="fab-col"><button class="fab" id="fabSelClear" title="清除選取">⌫</button></div>
-  <div class="selbar" id="selbar"><span class="n" id="selN">0</span><span>格</span><span class="grow"></span>
-    <button class="clr" id="selClr">取消</button><button class="move" id="selMove">移動</button><button class="erase" id="selErase">清除標記</button><button class="assign" id="selAssign">指定</button></div>
+  <div class="selbar" id="selbar">
+    <div class="selactions"><button class="move" id="selMove">移動</button><button class="assign" id="selAssign">編輯</button><button class="clr" id="selClr">取消選取</button><button class="erase" id="selErase">刪除標記</button></div></div>
   <div class="targetbar" id="targetbar"><span class="grow" id="targetName"></span>
     <span style="font-size:13px;opacity:.9">點格加入/移除</span><button id="targetDone">完成</button></div>
 </div>
 
-<div class="legendwrap" id="legendWrap">
-  <button class="legendtoggle" id="legendToggle" aria-expanded="false"><span class="legendicon" aria-hidden="true"></span>
-    <span id="legendTitle">圖例</span><span class="grow"></span><span class="layer" id="legendLayer">實際</span><span class="legendchev">⌄</span></button>
-  <div class="legendgrid" id="legendGrid"></div>
+<div class="legendlayer">
+  <div class="fabrow">
+    <button class="legendfab fabicon" id="btnUndo" type="button" disabled aria-label="復原上一步" title="復原上一步">↶</button>
+    <button class="legendfab fabicon" id="btnRedo" type="button" disabled aria-label="重做下一步" title="重做下一步">↷</button>
+    <button class="legendfab" id="listFab" type="button" aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.6" cy="6.5" r="1.3"/><circle cx="4.6" cy="12" r="1.3"/><circle cx="4.6" cy="17.5" r="1.3"/></svg>清單<span class="cnt" id="listFabCnt">0</span></button>
+    <button class="legendfab" id="legendToggle" type="button" aria-expanded="false"><span class="legendicon" aria-hidden="true"></span>圖例</button>
+  </div>
+  <div class="legendpanel" id="legendWrap">
+    <div class="legendhead"><span class="legendicon" aria-hidden="true"></span><span id="legendTitle">圖例</span><span class="grow"></span>
+      <span class="layer" id="legendLayer">實際</span><button class="sheetx" id="legendClose" type="button" aria-label="關閉圖例">✕</button></div>
+    <div class="legendgrid" id="legendGrid"></div>
+  </div>
 </div>
 
 <div class="listwrap" id="listWrap">
   <div class="listhead"><b>店家清單</b><span class="cnt" id="shopCnt">0</span><span class="grow"></span>
     <button id="btnListToggle" aria-expanded="true">收合</button></div>
-  <div class="listtools"><input id="shopSearch" type="search" placeholder="搜尋店家或分類" autocomplete="off">
-    <button id="btnCats">管理分類</button></div>
+  <div class="listtools"><input id="shopSearch" type="search" placeholder="搜尋店家或分類" autocomplete="off"></div>
   <div class="shoplist" id="shopList"></div>
 </div>
 
@@ -357,15 +382,25 @@ const TAXONOMY_VERSION=4;
 
 let state={ zones:clone(DEFAULT_ZONES), cats:clone(DEFAULT_CATS), shops:[], cells:{}, gridW:DEFAULT_GRID_W,gridH:DEFAULT_GRID_H,view:"actual",
   fillA:80, showGrid:true, showLabels:true, showNames:false, listCollapsed:false, lastShopId:"", taxonomyVersion:0 };
-let mode="assign", activeShop=null, lastShopName="", shopFilter="", legendOpen=false;
+let mode="assign", activeShop=null, inspectedShop=null, lastShopName="", shopFilter="", legendOpen=false;
 let selection=new Set();
 let numbers={};   // shopId -> number
+const HISTORY_LIMIT=60, HISTORY_KEYS=["taxonomyVersion","gridW","gridH","zones","cats","shops","cells"];
+let undoStack=[],redoStack=[],historyCurrent=null,historyReady=false,historyBusy=false;
 
 /* ---- utils ---- */
 function clone(o){return JSON.parse(JSON.stringify(o));}
 function $(s){return document.querySelector(s);}
 function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
-const save=debounce(()=>{try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}},250);
+const persistState=debounce(()=>{try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}},250);
+function historySnapshot(){const out={};HISTORY_KEYS.forEach(k=>out[k]=clone(state[k]));return out;}
+function updateHistoryButtons(){const u=$("#btnUndo"),r=$("#btnRedo");if(u)u.disabled=!undoStack.length;if(r)r.disabled=!redoStack.length;}
+function recordHistory(){if(!historyReady||historyBusy)return;const next=historySnapshot();if(historyCurrent&&JSON.stringify(next)===JSON.stringify(historyCurrent))return;if(historyCurrent){undoStack.push(historyCurrent);if(undoStack.length>HISTORY_LIMIT)undoStack.shift();}historyCurrent=next;redoStack=[];updateHistoryButtons();}
+function save(){recordHistory();persistState();}
+function initHistory(){historyCurrent=historySnapshot();undoStack=[];redoStack=[];historyReady=true;historyBusy=false;updateHistoryButtons();}
+function restoreHistorySnapshot(snapshot){historyBusy=true;HISTORY_KEYS.forEach(k=>state[k]=clone(snapshot[k]));selection.clear();activeShop=null;clearShopInspection();cellKey=null;selRect=null;selStart=null;lastShopName=shopById(state.lastShopId)?.name||"";$("#targetbar").classList.remove("on");closeAllSheets();$("#backdrop").classList.remove("on");syncGridMetrics();recompute();syncListCollapse(true);renderLegend();updateSelBar();fitBase();applyT();drawBase();drawOverlay();renderList();updateGridSheet();historyCurrent=historySnapshot();historyBusy=false;persistState();updateHistoryButtons();}
+function undoHistory(){if(!undoStack.length)return false;redoStack.push(historyCurrent);const target=undoStack.pop();restoreHistorySnapshot(target);toast("已復原上一步");return true;}
+function redoHistory(){if(!redoStack.length)return false;undoStack.push(historyCurrent);if(undoStack.length>HISTORY_LIMIT)undoStack.shift();const target=redoStack.pop();restoreHistorySnapshot(target);toast("已重做下一步");return true;}
 function esc(s){return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
 function hexA(hex,a){const h=hex.replace("#","");const n=h.length===3?h.split("").map(x=>x+x).join(""):h;
   return `rgba(${parseInt(n.slice(0,2),16)},${parseInt(n.slice(2,4),16)},${parseInt(n.slice(4,6),16)},${a})`;}
@@ -430,7 +465,7 @@ function pruneUnusedUnnamedShops(){ const used=new Set(Object.values(state.cells
   state.shops=state.shops.filter(sh=>{const drop=String(sh.name||"").startsWith("未命名")&&!used.has(sh.id);if(drop)removed.add(sh.id);return !drop;});
   if(removed.has(state.lastShopId)){state.lastShopId="";lastShopName="";}
 }
-function pruneOrphanedShops(){const used=new Set(Object.values(state.cells).map(d=>d.shop).filter(Boolean)),removed=new Set();state.shops=state.shops.filter(sh=>{if(used.has(sh.id))return true;removed.add(sh.id);return false;});if(removed.has(state.lastShopId)){state.lastShopId="";lastShopName="";}if(removed.has(activeShop)){activeShop=null;$("#targetbar").classList.remove("on");}}
+function pruneOrphanedShops(){const used=new Set(Object.values(state.cells).map(d=>d.shop).filter(Boolean)),removed=new Set();state.shops=state.shops.filter(sh=>{if(used.has(sh.id))return true;removed.add(sh.id);return false;});if(removed.has(state.lastShopId)){state.lastShopId="";lastShopName="";}if(removed.has(activeShop)){activeShop=null;$("#targetbar").classList.remove("on");}if(removed.has(inspectedShop))clearShopInspection();}
 let toastTimer=null;
 function toast(msg){ const el=$("#toast"); el.textContent=msg; el.classList.add("on"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("on"),2200); }
 
@@ -457,6 +492,8 @@ function zoomAt(cx,cy,ns){ ns=clamp(ns,0.4,16); const wrap=$("#stagewrap").getBo
 $("#zoomIn").onclick=()=>{const w=$("#stagewrap").getBoundingClientRect();zoomAt(w.left+w.width/2,w.top+w.height/2,s*1.5);};
 $("#zoomOut").onclick=()=>{const w=$("#stagewrap").getBoundingClientRect();zoomAt(w.left+w.width/2,w.top+w.height/2,s/1.5);};
 $("#btnFit").onclick=fit;
+$("#btnUndo").onclick=undoHistory;$("#btnRedo").onclick=redoHistory;
+document.addEventListener("keydown",e=>{if(!(e.ctrlKey||e.metaKey))return;const tag=e.target?.tagName;if(["INPUT","TEXTAREA","SELECT"].includes(tag)||e.target?.isContentEditable)return;const key=e.key.toLowerCase();if(key==="z"){e.preventDefault();if(e.shiftKey)redoHistory();else undoHistory();}else if(key==="y"){e.preventDefault();redoHistory();}});
 
 /* ---- pointer -> cell ---- */
 function cellAt(clientX,clientY){ const rect=overlay.getBoundingClientRect();
@@ -466,13 +503,17 @@ function cellAt(clientX,clientY){ const rect=overlay.getBoundingClientRect();
 /* ---- gestures ---- */
 const wrap=$("#stagewrap"); const pts=new Map();
 let gest=null; // 'pan'|'select'|'pinch'
-let selStart=null, selRect=null, moved=false, panLast=null, pinch=null;
+let selStart=null, selRect=null, moved=false, panLast=null, panOrigin=null, pinch=null;
+let longPressTimer=null, longPressFired=false;
+function cancelLongPress(){ if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null;} }
 wrap.addEventListener("pointerdown",e=>{
   if(e.target.closest(".zoomstack,.fab-col,.selbar,.targetbar")) return;
   wrap.setPointerCapture(e.pointerId); pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(pts.size===2){ gest="pinch"; const p=[...pts.values()]; pinch={d:dist(p[0],p[1]),mx:(p[0].x+p[1].x)/2,my:(p[0].y+p[1].y)/2}; selRect=null; drawOverlay(); return; }
-  moved=false;
-  if(mode==="view"){ gest="pan"; panLast={x:e.clientX,y:e.clientY}; }
+  if(pts.size===2){ gest="pinch"; const p=[...pts.values()]; pinch={d:dist(p[0],p[1]),mx:(p[0].x+p[1].x)/2,my:(p[0].y+p[1].y)/2}; selRect=null;panOrigin=null;cancelLongPress();drawOverlay(); return; }
+  moved=false; longPressFired=false; cancelLongPress();
+  if(mode==="view"){ gest="pan"; panLast={x:e.clientX,y:e.clientY};panOrigin={x:e.clientX,y:e.clientY,k:cellAt(e.clientX,e.clientY)};
+    const pressKey=panOrigin.k;
+    longPressTimer=setTimeout(()=>{ longPressTimer=null; longPressFired=true; if(navigator.vibrate)navigator.vibrate(14); openCellSheet(pressKey); },550); }
   else { gest="select"; selStart=cellAt(e.clientX,e.clientY); selRect=null; }
 });
 wrap.addEventListener("pointermove",e=>{
@@ -481,24 +522,28 @@ wrap.addEventListener("pointermove",e=>{
     const wr=wrap.getBoundingClientRect(); const cX=(pinch.mx-wr.left-tx)/s, cY=(pinch.my-wr.top-ty)/s;
     s=clamp(s*(nd/pinch.d),0.4,16); tx=(nmx-wr.left)-cX*s; ty=(nmy-wr.top)-cY*s; clampT(); applyT();
     pinch={d:nd,mx:nmx,my:nmy}; return; }
-  if(gest==="pan"){ tx+=e.clientX-panLast.x; ty+=e.clientY-panLast.y; panLast={x:e.clientX,y:e.clientY}; clampT(); applyT(); return; }
+  if(gest==="pan"){if(panOrigin&&Math.hypot(e.clientX-panOrigin.x,e.clientY-panOrigin.y)>5){moved=true;cancelLongPress();}tx+=e.clientX-panLast.x; ty+=e.clientY-panLast.y; panLast={x:e.clientX,y:e.clientY}; clampT(); applyT(); return; }
   if(gest==="select"){ const k=cellAt(e.clientX,e.clientY); if(k!==selStart) moved=true;
     const [r0,c0]=keyRC(selStart),[r1,c1]=keyRC(k); selRect=[Math.min(r0,r1),Math.min(c0,c1),Math.max(r0,r1),Math.max(c0,c1)]; drawOverlay(); }
 });
-function endPtr(e){ pts.delete(e.pointerId);
-  if(gest==="pinch"){ if(pts.size<2){ gest=null; } return; }
+function endPtr(e){ pts.delete(e.pointerId); cancelLongPress();
+  if(gest==="pinch"){ if(pts.size<2){ gest=null;panOrigin=null; } return; }
+  if(gest==="pan"&&!moved&&panOrigin&&!longPressFired)tapCell(panOrigin.k);
   if(gest==="select"){
     if(!moved){ tapCell(selStart); }
     else if(selRect){ const [r0,c0,r1,c1]=selRect; for(let r=r0;r<=r1;r++)for(let c=c0;c<=c1;c++) addSelOrShop(r+"_"+c); afterSel(); }
     selRect=null; drawOverlay();
   }
-  gest=null; selStart=null; panLast=null;
+  gest=null; selStart=null; panLast=null;panOrigin=null;
 }
 wrap.addEventListener("pointerup",endPtr); wrap.addEventListener("pointercancel",endPtr);
 function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
 
 function tapCell(k){
-  if(mode==="view"){ openCellSheet(k); return; }
+  if(mode==="view"){const id=state.cells[k]?.shop;if(id&&shopById(id)){inspectShopFromMap(id);return;}
+    const hadInspection=!!inspectedShop;clearShopInspection();if(hadInspection){drawOverlay();renderList();}
+    if(!state.listCollapsed){state.listCollapsed=true;persistState();syncListCollapse(true);}
+    return;}
   addSelOrShop(k,true); afterSel();
 }
 function addSelOrShop(k,toggle){
@@ -537,9 +582,10 @@ function drawOverlay(){
     selection.forEach(k=>{const [r,c]=keyRC(k); octx.fillRect(c*CW,r*CH,CW,CH);}); }
   if(selRect){ const [r0,c0,r1,c1]=selRect; octx.strokeStyle="#b5401f"; octx.lineWidth=CW*0.14;
     octx.strokeRect(c0*CW,r0*CH,(c1-c0+1)*CW,(r1-r0+1)*CH); octx.fillStyle=hexA("#e2603f",.2); octx.fillRect(c0*CW,r0*CH,(c1-c0+1)*CW,(r1-r0+1)*CH); }
-  // active shop glow
-  if(activeShop){ octx.strokeStyle="#e2603f"; octx.lineWidth=CW*0.22; octx.setLineDash([CW*0.6,CW*0.4]);
-    for(const k in state.cells){ if(state.cells[k].shop===activeShop){ const [r,c]=keyRC(k); octx.strokeRect(c*CW+1,r*CH+1,CW-2,CH-2);} } octx.setLineDash([]); }
+  // active or inspected shop glow
+  const highlightedShop=activeShop||inspectedShop;
+  if(highlightedShop){ octx.strokeStyle="#e2603f"; octx.lineWidth=CW*0.22; octx.setLineDash([CW*0.6,CW*0.4]);
+    for(const k in state.cells){ if(state.cells[k].shop===highlightedShop){ const [r,c]=keyRC(k); octx.strokeRect(c*CW+1,r*CH+1,CW-2,CH-2);} } octx.setLineDash([]); }
 }
 function drawShopBorders(ctx){ ctx.strokeStyle="rgba(20,45,50,.55)"; ctx.lineWidth=Math.max(0.8,CW*0.12);
   for(const k in state.cells){ const d=state.cells[k]; if(!d.shop)continue; const [r,c]=keyRC(k);
@@ -595,14 +641,13 @@ function recompute(){
 }
 
 /* ---- selection bar ---- */
-function updateSelBar(){ const n=selection.size; $("#selN").textContent=n;$("#moveSelN").textContent=n;$("#selMove").disabled=!n; $("#selbar").classList.toggle("on",n>0&&!activeShop); }
+function updateSelBar(){ const n=selection.size; $("#moveSelN").textContent=n;$("#selMove").disabled=!n; const on=n>0&&!activeShop; $("#selbar").classList.toggle("on",on); document.body.classList.toggle("selbar-on",on); }
 $("#selClr").onclick=()=>{ selection.clear(); updateSelBar(); drawOverlay(); };
 $("#selErase").onclick=()=>{ const total=selection.size; let changed=0,walls=0;
   selection.forEach(k=>{ const cur=state.cells[k]; if(!cur)return; if(cur.cat||cur.shop||cur.plan==="zw")changed++;if(cur.plan==="zw")walls++;delete cur.cat; delete cur.shop;if(cur.plan==="zw")delete cur.plan;
     if(!cur.plan)delete state.cells[k]; });
   selection.clear(); pruneUnusedUnnamedShops(); recompute(); save(); updateSelBar(); drawBase(); drawOverlay(); renderList();
   toast(changed?(walls?`已清除 ${changed} 格標記，其中 ${walls} 格牆壁連同底圖移除`:`已清除 ${changed} 格實際標記（其他規劃底圖保留）`):`所選 ${total} 格沒有可清除的標記`); };
-$("#fabSelClear").onclick=()=>{ selection.clear(); updateSelBar(); drawOverlay(); };
 $("#selAssign").onclick=openAssign;
 const MOVE_DELTAS={up:[-1,0],down:[1,0],left:[0,-1],right:[0,1]};
 function moveSelection(dir){const delta=MOVE_DELTAS[dir];if(!delta||!selection.size)return false;const [dr,dc]=delta,keys=[...selection],targets=new Map(),actual=new Map();let hasActual=false;
@@ -619,16 +664,19 @@ document.querySelectorAll("[data-move]").forEach(b=>b.onclick=()=>moveSelection(
 $("#moveClose").onclick=()=>closeSheet("moveSheet");
 
 /* ---- modes / view ---- */
-function setMode(m){ mode=m; $("#modeSeg").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
-  $("#mapHint").textContent=m==="assign"?"點按多選・拖曳框選・雙指移動縮放":"單指移動・點格編輯・雙指縮放"; }
+function setMode(m){let changed=false;if(m==="view"&&activeShop){activeShop=null;$("#targetbar").classList.remove("on");changed=true;}if(m!=="view"&&inspectedShop){clearShopInspection();changed=true;}
+  if(m==="view"&&(selection.size||selRect)){selection.clear();selRect=null;selStart=null;closeSheet("assignSheet");closeSheet("moveSheet");updateSelBar();changed=true;}
+  mode=m;$("#modeSeg").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
+  $("#mapHint").textContent=m==="assign"?"點按多選・拖曳框選・雙指移動縮放":"單指移動・點店家查看・長按編輯格子";if(changed){drawOverlay();renderList();} }
 $("#modeSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>setMode(b.dataset.m));
 function renderLegend(){ const items=state.view==="plan"?state.zones:state.cats,host=$("#legendGrid"); host.innerHTML="";
   $("#legendLayer").textContent=state.view==="plan"?"規劃":"實際";
   items.forEach(it=>{ const row=document.createElement("div"); row.className="legenditem";
     const sw=document.createElement("span"); sw.className="legendsw"; sw.style.background=it.color;
     const name=document.createElement("span"); name.textContent=it.name; row.append(sw,name); host.appendChild(row); }); }
-function syncLegend(){ $("#legendWrap").classList.toggle("open",legendOpen); $("#legendToggle").setAttribute("aria-expanded",String(legendOpen)); }
-$("#legendToggle").onclick=()=>{ legendOpen=!legendOpen; syncLegend(); requestAnimationFrame(()=>{fitBase();clampT();applyT();if(activeShop)zoomToShop(activeShop);}); };
+function syncLegend(){ $("#legendWrap").classList.toggle("open",legendOpen); $("#legendToggle").classList.toggle("hidden",legendOpen); $("#legendToggle").setAttribute("aria-expanded",String(legendOpen)); }
+$("#legendToggle").onclick=()=>{ legendOpen=true; syncLegend(); };
+$("#legendClose").onclick=()=>{ legendOpen=false; syncLegend(); };
 function setView(v){ state.view=v; $("#viewSeg").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); save(); drawBase(); drawOverlay(); renderLegend(); }
 $("#viewSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>setView(b.dataset.v));
 
@@ -683,15 +731,17 @@ $("#cellSave").onclick=()=>{ if(!cellKey)return; const cur=state.cells[cellKey]|
 
 /* ---- shop list ---- */
 function shopCount(id){ let n=0; for(const k in state.cells) if(state.cells[k].shop===id)n++; return n; }
+function clearShopInspection(clearSearch=true){inspectedShop=null;if(clearSearch){shopFilter="";const search=$("#shopSearch");if(search)search.value="";}}
+function inspectShopFromMap(id){const sh=shopById(id);if(!sh)return;if(inspectedShop===id){clearShopInspection();drawOverlay();renderList();if(!state.listCollapsed){state.listCollapsed=true;persistState();syncListCollapse(true);}return;}activeShop=null;$("#targetbar").classList.remove("on");selection.clear();updateSelBar();inspectedShop=id;shopFilter="";$("#shopSearch").value=sh.name;if(state.listCollapsed){state.listCollapsed=false;persistState();syncListCollapse(true);}drawOverlay();renderList();}
 function renderList(){
   recompute();
   const ordered=[...state.shops].filter(sh=>shopCount(sh.id)>0).sort((a,b)=>(numbers[a.id]||999)-(numbers[b.id]||999));
-  $("#shopCnt").textContent=ordered.length;
+  $("#shopCnt").textContent=ordered.length; $("#listFabCnt").textContent=ordered.length;
   const host=$("#shopList"),prevScroll=host.scrollTop; host.innerHTML="";
-  if(!ordered.length){ host.innerHTML='<div class="empty">尚無店家。用「框選」選取格子後輸入店名；之後也可點清單店家，快速連續標註。</div>'; return; }
-  const q=shopFilter.trim().toLocaleLowerCase("zh-Hant"); const shown=q?ordered.filter(sh=>{const cat=catById(sh.cat);return (sh.name+" "+(cat?.name||"")).toLocaleLowerCase("zh-Hant").includes(q);}):ordered;
+  if(!ordered.length){ host.innerHTML='<div class="empty">尚無店家。用「匡選編輯」選取格子後輸入店名；之後也可點清單店家，快速連續標註。</div>'; return; }
+  const q=shopFilter.trim().toLocaleLowerCase("zh-Hant"); const shown=inspectedShop?ordered.filter(sh=>sh.id===inspectedShop):q?ordered.filter(sh=>{const cat=catById(sh.cat);return (sh.name+" "+(cat?.name||"")).toLocaleLowerCase("zh-Hant").includes(q);}):ordered;
   if(!shown.length){ host.innerHTML='<div class="empty">找不到符合的店家或分類。</div>'; return; }
-  shown.forEach(sh=>{ const cat=catById(sh.cat); const it=document.createElement("div"); it.className="shopitem"+(activeShop===sh.id?" active":""); it.tabIndex=0; it.setAttribute("role","button");
+  shown.forEach(sh=>{ const cat=catById(sh.cat); const it=document.createElement("div"); it.className="shopitem"+(activeShop===sh.id||inspectedShop===sh.id?" active":""); it.tabIndex=0; it.setAttribute("role","button");
     it.innerHTML=`<div class="numbadge">${numbers[sh.id]||"–"}</div><div class="dot" style="background:${cat?cat.color:'#ccc'}"></div>`+
       `<div class="nm">${esc(sh.name)}</div><div class="meta">${cat?esc(cat.name):"—"} · ${shopCount(sh.id)}格</div>`+
       `<div class="edit" data-edit role="button" aria-label="編輯 ${esc(sh.name)}">✎</div>`;
@@ -699,9 +749,9 @@ function renderList(){
     it.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();focusShop(sh.id);}};
     host.appendChild(it); }); host.scrollTop=prevScroll;
 }
-function focusShop(id){ activeShop=id; const sh=shopById(id);
+function focusShop(id){clearShopInspection();activeShop=id; const sh=shopById(id);
   $("#targetName").textContent="標記中："+sh.name; $("#targetbar").classList.add("on"); $("#selbar").classList.remove("on"); selection.clear();
-  setMode("assign"); setView("actual"); zoomToShop(id); drawOverlay(); renderList(); toast("點任一格即可加入或移除這家店"); }
+  setMode("assign"); setView("actual"); zoomToShop(id); drawOverlay(); renderList(); }
 $("#targetDone").onclick=()=>{ activeShop=null; $("#targetbar").classList.remove("on"); drawOverlay(); renderList(); };
 function zoomToShop(id){ let r0=1e9,c0=1e9,r1=-1,c1=-1,has=false;
   for(const k in state.cells){ if(state.cells[k].shop===id){ const [r,c]=keyRC(k); has=true; r0=Math.min(r0,r);c0=Math.min(c0,c);r1=Math.max(r1,r);c1=Math.max(c1,c);} }
@@ -711,10 +761,11 @@ function zoomToShop(id){ let r0=1e9,c0=1e9,r1=-1,c1=-1,has=false;
   const cxContent=((c0+c1)/2+0.5)*CW/imgW*baseW, cyContent=((r0+r1)/2+0.5)*CH/imgH*baseH;
   tx=W/2 - cxContent*s; ty=H/2 - cyContent*s; clampT(); applyT(); }
 
-$("#shopSearch").oninput=e=>{shopFilter=e.target.value;renderList();};
-function syncListCollapse(){ $("#listWrap").classList.toggle("collapsed",!!state.listCollapsed); $("#btnListToggle").textContent=state.listCollapsed?"展開":"收合";
-  $("#btnListToggle").setAttribute("aria-expanded",String(!state.listCollapsed)); requestAnimationFrame(()=>{fit();if(activeShop)zoomToShop(activeShop);}); }
-$("#btnListToggle").onclick=()=>{state.listCollapsed=!state.listCollapsed;save();syncListCollapse();};
+$("#shopSearch").oninput=e=>{inspectedShop=null;shopFilter=e.target.value;drawOverlay();renderList();};
+function syncListCollapse(preserveViewport=false){ $("#listWrap").classList.toggle("collapsed",!!state.listCollapsed); $("#listFab").classList.toggle("hidden",!state.listCollapsed);$("#listFab").setAttribute("aria-expanded",String(!state.listCollapsed)); $("#btnListToggle").textContent="收合";
+  $("#btnListToggle").setAttribute("aria-expanded",String(!state.listCollapsed));requestAnimationFrame(()=>{if(preserveViewport){fitBase();clampT();applyT();}else{fit();if(activeShop)zoomToShop(activeShop);}}); }
+$("#btnListToggle").onclick=()=>{state.listCollapsed=!state.listCollapsed;persistState();syncListCollapse(true);};
+$("#listFab").onclick=()=>{state.listCollapsed=false;persistState();syncListCollapse(true);};
 
 /* ---- shop edit ---- */
 let editShopId=null;
@@ -725,14 +776,14 @@ $("#shSave").onclick=()=>{ const sh=shopById(editShopId); if(!sh)return; sh.name
   recompute(); save(); closeSheet("shopSheet"); drawBase(); drawOverlay(); renderList(); };
 $("#shDelete").onclick=()=>{ if(!confirm("刪除此店家？該店家的分類與上色也會一併清除。"))return;
   for(const k in state.cells){ if(state.cells[k].shop===editShopId){ delete state.cells[k].shop; delete state.cells[k].cat; if(!state.cells[k].plan)delete state.cells[k]; } }
-  state.shops=state.shops.filter(x=>x.id!==editShopId); if(state.lastShopId===editShopId)state.lastShopId=""; if(activeShop===editShopId){activeShop=null;$("#targetbar").classList.remove("on");}
+  state.shops=state.shops.filter(x=>x.id!==editShopId); if(state.lastShopId===editShopId)state.lastShopId=""; if(activeShop===editShopId){activeShop=null;$("#targetbar").classList.remove("on");}if(inspectedShop===editShopId)clearShopInspection();
   recompute(); save(); closeSheet("shopSheet"); drawBase(); drawOverlay(); renderList(); };
 
 /* ---- cats/zones modal ---- */
 let modalTarget="cats";
 $("#btnCats").onclick=()=>openModal("cats");
 function openModal(t){ modalTarget=t; $("#modalTitle").textContent=t==="zones"?"規劃分區":"實際使用分類";
-  $("#modalHint").textContent=t==="zones"?"對應底圖分區；牆壁色固定為黑灰色，但牆壁格可直接在地圖上新增、移動或清除。":"可新增、刪除或合併實際分類。刪除會一併清空該分類的店家與標記；合併則會保留店家。牆壁格請直接在地圖上新增或清除。";
+  $("#modalHint").textContent=t==="zones"?"對應底圖分區；牆壁色固定為黑灰色，牆壁格可直接在地圖上新增或清除。":"可新增、刪除或合併實際分類。刪除會一併清空該分類的店家與標記；合併則會保留店家。牆壁格請直接在地圖上新增或清除。";
   $("#catTools").classList.toggle("hidden",t==="zones"); $("#mergeBox").classList.add("hidden"); renderCatList(); $("#catModal").classList.add("open"); }
 function modalArr(){return modalTarget==="zones"?state.zones:state.cats;}
 function refreshAfterCategoryChange(){recompute();save();drawBase();drawOverlay();renderList();renderLegend();}
@@ -742,7 +793,7 @@ function editableCategories(){return state.cats.filter(c=>c.id!=="c10");}
 function renderMergeOptions(){const cats=editableCategories(),from=$("#mergeFrom"),to=$("#mergeTo"),keepFrom=from.value;from.innerHTML="";cats.forEach(c=>{const o=document.createElement("option");o.value=c.id;o.textContent=c.name;from.appendChild(o);});if(cats.some(c=>c.id===keepFrom))from.value=keepFrom;const source=from.value,keepTo=to.value;to.innerHTML="";cats.filter(c=>c.id!==source).forEach(c=>{const o=document.createElement("option");o.value=c.id;o.textContent=c.name;to.appendChild(o);});if([...to.options].some(o=>o.value===keepTo))to.value=keepTo;$("#mergeApply").disabled=!source||!to.value;}
 function deleteActualCategory(cat){const shopIds=new Set(state.shops.filter(sh=>sh.cat===cat.id).map(sh=>sh.id));
   for(const k in state.cells){const d=state.cells[k];if(shopIds.has(d.shop)){delete d.shop;delete d.cat;}else if(d.cat===cat.id)delete d.cat;if(!d.plan&&!d.cat&&!d.shop)delete state.cells[k];}
-  state.shops=state.shops.filter(sh=>!shopIds.has(sh.id));if(shopIds.has(state.lastShopId)){state.lastShopId="";lastShopName="";}if(shopIds.has(activeShop)){activeShop=null;$("#targetbar").classList.remove("on");}
+  state.shops=state.shops.filter(sh=>!shopIds.has(sh.id));if(shopIds.has(state.lastShopId)){state.lastShopId="";lastShopName="";}if(shopIds.has(activeShop)){activeShop=null;$("#targetbar").classList.remove("on");}if(shopIds.has(inspectedShop))clearShopInspection();
   state.cats=state.cats.filter(c=>c.id!==cat.id);refreshAfterCategoryChange();renderCatList();}
 function mergeActualCategory(fromId,toId){if(!fromId||!toId||fromId===toId||fromId==="c10"||toId==="c10")return;state.shops.forEach(sh=>{if(sh.cat===fromId)sh.cat=toId;});for(const k in state.cells)if(state.cells[k].cat===fromId)state.cells[k].cat=toId;state.cats=state.cats.filter(c=>c.id!==fromId);refreshAfterCategoryChange();renderCatList();$("#mergeBox").classList.add("hidden");toast("分類已合併");}
 function renderCatList(focusId=""){ const list=$("#catList"); list.innerHTML=""; modalArr().forEach((cat,i)=>{ const row=document.createElement("div"); row.className="catrow";row.dataset.id=cat.id;
@@ -786,7 +837,7 @@ $("#fillA").oninput=e=>{state.fillA=+e.target.value;$("#fillAValue").textContent
 $("#showGrid").onchange=e=>{state.showGrid=e.target.checked;save();drawOverlay();};
 $("#showLabels").onchange=e=>{state.showLabels=e.target.checked;save();drawOverlay();};
 $("#showNames").onchange=e=>{state.showNames=e.target.checked;save();drawOverlay();};
-$("#btnClearActual").onclick=()=>{ if(confirm("清除所有實際分類、店家與店名?(規劃層保留)")){ for(const k in state.cells){delete state.cells[k].cat;delete state.cells[k].shop;if(!state.cells[k].plan)delete state.cells[k];} state.shops=[]; recompute(); save(); closeSheet("menuSheet"); drawBase(); drawOverlay(); renderList(); } };
+$("#btnClearActual").onclick=()=>{ if(confirm("清除所有實際分類、店家與店名?(規劃層保留)")){ for(const k in state.cells){delete state.cells[k].cat;delete state.cells[k].shop;if(!state.cells[k].plan)delete state.cells[k];} state.shops=[];clearShopInspection();activeShop=null;$("#targetbar").classList.remove("on");recompute(); save(); closeSheet("menuSheet"); drawBase(); drawOverlay(); renderList(); } };
 
 /* ---- render composite (for export) ---- */
 const EXPORT_PAD_X=CW*5, EXPORT_PAD_Y=CH*5, EXPORT_COLS=5, EXPORT_LEGEND_H=174, EXPORT_LIST_ROW_H=65, EXPORT_LIST_ROW_WRAP_H=92;
@@ -914,16 +965,24 @@ function buildPdf(jpeg,w,h){ let parts=[],off=[],pos=0; const add=b=>{parts.push
 $("#btnExportJSON").onclick=()=>dl(new Blob([JSON.stringify(state)],{type:"application/json"}),"market-backup-"+stamp()+".json");
 $("#btnImport").onclick=()=>$("#fileJson").click();
 $("#fileJson").onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader();
-  rd.onload=()=>{ try{ const st=JSON.parse(rd.result); if(!st.cells||!st.zones)throw 0; state=Object.assign({cats:[],shops:[],gridW:DEFAULT_GRID_W,gridH:DEFAULT_GRID_H,view:"actual",fillA:80,showGrid:true,showLabels:true,showNames:false,listCollapsed:false,lastShopId:"",taxonomyVersion:0},st); boot(); closeSheet("menuSheet"); }catch(_){ alert("無法讀取此檔。"); } };
+  rd.onload=()=>{ try{ const st=JSON.parse(rd.result); if(!st.cells||!st.zones)throw 0; historyBusy=true;try{state=Object.assign({cats:[],shops:[],gridW:DEFAULT_GRID_W,gridH:DEFAULT_GRID_H,view:"actual",fillA:80,showGrid:true,showLabels:true,showNames:false,listCollapsed:false,lastShopId:"",taxonomyVersion:0},st);boot();}finally{historyBusy=false;}recordHistory();persistState();closeSheet("menuSheet"); }catch(_){historyBusy=false;alert("無法讀取此檔。");} };
   rd.readAsText(f); e.target.value=""; };
 
 /* ---- boot ---- */
 function load(){ try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const st=JSON.parse(raw); if(st&&st.zones&&st.cells){ state=Object.assign(state,st); if(!Object.prototype.hasOwnProperty.call(st,"taxonomyVersion"))state.taxonomyVersion=0; return true; } } }catch(e){} return false; }
+function addCloseButtons(){
+  const mk=(label,fn)=>{const b=document.createElement("button");b.className="sheetx";b.type="button";b.setAttribute("aria-label",label);b.textContent="✕";b.onclick=fn;return b;};
+  document.querySelectorAll(".sheet").forEach(sh=>{ if(sh.querySelector(":scope > .sheetx"))return; sh.insertBefore(mk("關閉",()=>closeSheet(sh.id)),sh.firstChild); });
+  const modal=document.querySelector("#catModal .modal");
+  if(modal&&!modal.querySelector(":scope > .sheetx"))modal.insertBefore(mk("關閉",()=>$("#catDone").click()),modal.firstChild);
+}
+addCloseButtons();
 function boot(){ normalizeTaxonomy(); normalizeWalls();syncGridMetrics(); ensureNamedRegions(); lastShopName=shopById(state.lastShopId)?.name||""; recompute(); syncListCollapse(); syncLegend(); syncExportOptions(); fit(); drawBase(); drawOverlay(); renderList(); setMode("assign"); setView(state.view||"actual"); }
 if(!load()){ state.cells=clone(DEFAULT_PLAN_CELLS); }
 window.addEventListener("resize",debounce(()=>{ fit(); if(activeShop)zoomToShop(activeShop); },200));
 window.addEventListener("beforeunload",()=>{try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}});
 boot();
+initHistory();
 </script>
 </body>
 </html>

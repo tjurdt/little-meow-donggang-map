@@ -138,6 +138,11 @@
   .catrow input[type=text]{flex:1;padding:9px 10px;border:1px solid var(--line-strong);border-radius:8px}
   .catrow .del{width:40px;height:40px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#b5401f;font-size:17px}
   .catrow .del:disabled{opacity:.35;cursor:not-allowed}
+  .cattools{border-top:1px solid var(--line);padding-top:12px;margin-top:4px}.cattools.hidden,.mergebox.hidden{display:none}
+  .cattoolbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mergebox{margin-top:10px;padding:11px;background:#f5f8f8;border:1px solid var(--line);border-radius:10px}
+  .mergeflow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end;gap:7px}.mergeflow label{font-size:12px;color:var(--muted)}
+  .mergeflow select{display:block;width:100%;margin-top:4px;padding:10px 8px;border:1px solid var(--line-strong);border-radius:8px;background:#fff;min-width:0}
+  .mergearrow{padding-bottom:11px;color:var(--muted);font-weight:700}.mergebox .btn{width:100%;margin-top:10px}
   .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
   .backdrop{position:fixed;inset:0;z-index:55;background:transparent;display:none} .backdrop.on{display:block}
   .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));z-index:100;transform:translate(-50%,20px);opacity:0;
@@ -287,6 +292,13 @@
 <div class="modal-bg" id="catModal"><div class="modal">
   <h2 id="modalTitle">分類</h2><p class="hint" id="modalHint"></p>
   <div class="catlist" id="catList"></div>
+  <div class="cattools" id="catTools">
+    <div class="cattoolbtns"><button class="btn ghost sm" id="addCat">＋ 新增分類</button><button class="btn ghost sm" id="openMerge">合併分類</button></div>
+    <div class="mergebox hidden" id="mergeBox">
+      <div class="mergeflow"><label>來源分類<select id="mergeFrom"></select></label><span class="mergearrow">→</span><label>併入分類<select id="mergeTo"></select></label></div>
+      <button class="btn primary sm" id="mergeApply">確認合併</button>
+    </div>
+  </div>
   <div class="modal-actions"><button class="btn primary sm" id="catDone">完成</button></div>
 </div></div>
 
@@ -664,18 +676,30 @@ $("#shDelete").onclick=()=>{ if(!confirm("刪除此店家？該店家的分類�
 let modalTarget="cats";
 $("#btnCats").onclick=()=>openModal("cats");
 function openModal(t){ modalTarget=t; $("#modalTitle").textContent=t==="zones"?"規劃分區":"實際使用分類";
-  $("#modalHint").textContent=t==="zones"?"對應底圖分區；牆壁的黑灰色固定，其餘可改名改色。":"實際土地利用分類；牆壁的黑灰色固定。刪除會清除使用它的標記。";
-  renderCatList(); $("#catModal").classList.add("open"); }
+  $("#modalHint").textContent=t==="zones"?"對應底圖分區；牆壁的黑灰色固定，其餘可改名改色。":"可新增、刪除或合併實際分類。刪除會一併清空該分類的店家與標記；合併則會保留店家。";
+  $("#catTools").classList.toggle("hidden",t==="zones"); $("#mergeBox").classList.add("hidden"); renderCatList(); $("#catModal").classList.add("open"); }
 function modalArr(){return modalTarget==="zones"?state.zones:state.cats;}
-function renderCatList(){ const list=$("#catList"); list.innerHTML=""; modalArr().forEach((cat,i)=>{ const row=document.createElement("div"); row.className="catrow";
+function refreshAfterCategoryChange(){recompute();save();drawBase();drawOverlay();renderList();renderLegend();}
+function nextCategoryName(){let n=1;while(state.cats.some(c=>c.name==="新增分類 "+n))n++;return "新增分類 "+n;}
+function nextCategoryColor(){const palette=["#E67E22","#43A047","#039BE5","#F6BF26","#EC407A","#7E57C2","#8D6E63","#26A69A","#78909C"];return palette.find(color=>!state.cats.some(c=>c.color.toUpperCase()===color))||palette[(state.cats.length-1)%palette.length];}
+function editableCategories(){return state.cats.filter(c=>c.id!=="c10");}
+function renderMergeOptions(){const cats=editableCategories(),from=$("#mergeFrom"),to=$("#mergeTo"),keepFrom=from.value;from.innerHTML="";cats.forEach(c=>{const o=document.createElement("option");o.value=c.id;o.textContent=c.name;from.appendChild(o);});if(cats.some(c=>c.id===keepFrom))from.value=keepFrom;const source=from.value,keepTo=to.value;to.innerHTML="";cats.filter(c=>c.id!==source).forEach(c=>{const o=document.createElement("option");o.value=c.id;o.textContent=c.name;to.appendChild(o);});if([...to.options].some(o=>o.value===keepTo))to.value=keepTo;$("#mergeApply").disabled=!source||!to.value;}
+function deleteActualCategory(cat){const shopIds=new Set(state.shops.filter(sh=>sh.cat===cat.id).map(sh=>sh.id));
+  for(const k in state.cells){const d=state.cells[k];if(shopIds.has(d.shop)){delete d.shop;delete d.cat;}else if(d.cat===cat.id)delete d.cat;if(!d.plan&&!d.cat&&!d.shop)delete state.cells[k];}
+  state.shops=state.shops.filter(sh=>!shopIds.has(sh.id));if(shopIds.has(state.lastShopId)){state.lastShopId="";lastShopName="";}if(shopIds.has(activeShop)){activeShop=null;$("#targetbar").classList.remove("on");}
+  state.cats=state.cats.filter(c=>c.id!==cat.id);refreshAfterCategoryChange();renderCatList();}
+function mergeActualCategory(fromId,toId){if(!fromId||!toId||fromId===toId||fromId==="c10"||toId==="c10")return;state.shops.forEach(sh=>{if(sh.cat===fromId)sh.cat=toId;});for(const k in state.cells)if(state.cells[k].cat===fromId)state.cells[k].cat=toId;state.cats=state.cats.filter(c=>c.id!==fromId);refreshAfterCategoryChange();renderCatList();$("#mergeBox").classList.add("hidden");toast("分類已合併");}
+function renderCatList(focusId=""){ const list=$("#catList"); list.innerHTML=""; modalArr().forEach((cat,i)=>{ const row=document.createElement("div"); row.className="catrow";row.dataset.id=cat.id;
   const wall=cat.id==="zw"||cat.id==="c10";
-  row.innerHTML=`<input type="color" value="${cat.color}"${wall?' disabled title="牆壁顏色固定為黑灰色"':''}><input type="text" value="${esc(cat.name)}" maxlength="16">`+(modalTarget==="zones"?"":`<button class="del"${wall?' disabled title="牆壁為固定分類"':''}>✕</button>`);
+  row.innerHTML=`<input type="color" value="${cat.color}"${wall?' disabled title="牆壁顏色固定為黑灰色"':''}><input type="text" value="${esc(cat.name)}" maxlength="16">`+(modalTarget==="zones"?"":`<button class="del" aria-label="刪除 ${esc(cat.name)}"${wall?' disabled title="牆壁為固定分類"':''}>✕</button>`);
   row.children[0].oninput=e=>cat.color=e.target.value; row.children[1].oninput=e=>cat.name=e.target.value;
-  if(modalTarget!=="zones"&&!wall) row.children[2].onclick=()=>{ if(!confirm(`刪除「${cat.name}」?`))return;
-    for(const k in state.cells) if(state.cells[k].cat===cat.id){delete state.cells[k].cat; if(!state.cells[k].plan&&!state.cells[k].shop)delete state.cells[k];}
-    state.cats.splice(i,1); renderCatList(); };
-  list.appendChild(row); }); }
-$("#catDone").onclick=()=>{ if(modalTarget!=="zones")state.cats=state.cats.filter(c=>c.name.trim()!==""||c.id==="c10"); $("#catModal").classList.remove("open"); save(); drawBase(); drawOverlay(); renderList(); renderLegend(); };
+  if(modalTarget!=="zones"&&!wall) row.children[2].onclick=()=>{const count=state.shops.filter(sh=>sh.cat===cat.id).length;if(!confirm(`刪除「${cat.name}」？${count?`\n這會同時刪除 ${count} 個店家 item，並清空其上色與標記。`:"\n使用此分類的上色與標記會一併清空。"}`))return;deleteActualCategory(cat);};
+  list.appendChild(row); });if(modalTarget!=="zones"){const canMerge=editableCategories().length>=2;$("#openMerge").disabled=!canMerge;if(!canMerge)$("#mergeBox").classList.add("hidden");else if(!$("#mergeBox").classList.contains("hidden"))renderMergeOptions();}if(focusId){const input=list.querySelector(`[data-id="${focusId}"] input[type="text"]`);if(input){input.focus();input.select();}} }
+$("#addCat").onclick=()=>{const cat={id:uid("c"),name:nextCategoryName(),color:nextCategoryColor()},wallIndex=state.cats.findIndex(c=>c.id==="c10");if(wallIndex<0)state.cats.push(cat);else state.cats.splice(wallIndex,0,cat);refreshAfterCategoryChange();renderCatList(cat.id);};
+$("#openMerge").onclick=()=>{if(editableCategories().length<2){toast("至少需要兩個分類才能合併");return;}$("#mergeBox").classList.toggle("hidden");if(!$("#mergeBox").classList.contains("hidden"))renderMergeOptions();};
+$("#mergeFrom").onchange=renderMergeOptions;
+$("#mergeApply").onclick=()=>{const from=catById($("#mergeFrom").value),to=catById($("#mergeTo").value);if(!from||!to)return;if(!confirm(`將「${from.name}」併入「${to.name}」？\n店家與已標記格子都會保留並改用「${to.name}」。`))return;mergeActualCategory(from.id,to.id);};
+$("#catDone").onclick=()=>{ if(modalTarget!=="zones")state.cats.forEach(c=>{if(c.id!=="c10"&&!c.name.trim())c.name=nextCategoryName();}); $("#catModal").classList.remove("open"); refreshAfterCategoryChange(); };
 $("#catModal").onclick=e=>{ if(e.target.id==="catModal")$("#catDone").click(); };
 
 /* ---- sheets plumbing ---- */
@@ -704,17 +728,18 @@ function getExportOptions(){ const picked=document.querySelector('input[name="ex
 function exportLayout(opts={}){ const options=normalizedExportOptions(opts),shops=exportOrderedShops(),rowsPerCol=Math.max(1,Math.ceil(shops.length/EXPORT_COLS));
   const width=imgW+EXPORT_PAD_X*2,mapH=imgH+EXPORT_PAD_Y*2;
   const listColumns=Array.from({length:EXPORT_COLS},(_,col)=>shops.slice(col*rowsPerCol,(col+1)*rowsPerCol).map(sh=>{const lines=wrapSvgText(sh.name,13,2);return {sh,lines,height:lines.length>1?EXPORT_LIST_ROW_WRAP_H:EXPORT_LIST_ROW_H};}));
+  const legendItems=options.mode==="plan"?state.zones:state.cats,legendRows=Math.max(1,Math.ceil(legendItems.length/EXPORT_COLS)),legendH=Math.max(EXPORT_LEGEND_H,83+(legendRows-1)*48+36);
   const listContentH=shops.length?Math.max(...listColumns.map(col=>col.reduce((sum,row)=>sum+row.height,0))):52,listH=options.includeList?67+listContentH+20:0;
-  return {...options,shops,rowsPerCol,listColumns,width,mapH,padX:EXPORT_PAD_X,padY:EXPORT_PAD_Y,legendItems:options.mode==="plan"?state.zones:state.cats,totalH:mapH+EXPORT_LEGEND_H+listH,listH}; }
+  return {...options,shops,rowsPerCol,listColumns,width,mapH,padX:EXPORT_PAD_X,padY:EXPORT_PAD_Y,legendItems,legendH,totalH:mapH+legendH+listH,listH}; }
 function exportScaleFor(layout){const byPixels=Math.sqrt(16000000/(layout.width*layout.totalH)),bySide=Math.min(14000/layout.width,14000/layout.totalH);return clamp(Math.min(2,byPixels,bySide),.6,2);}
-function drawExportLegend(ctx,layout){ const y=layout.mapH; ctx.fillStyle="#fff"; ctx.fillRect(0,y,layout.width,EXPORT_LEGEND_H); ctx.strokeStyle="#cad4d5";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y+.5);ctx.lineTo(layout.width,y+.5);ctx.stroke();
+function drawExportLegend(ctx,layout){ const y=layout.mapH; ctx.fillStyle="#fff"; ctx.fillRect(0,y,layout.width,layout.legendH); ctx.strokeStyle="#cad4d5";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y+.5);ctx.lineTo(layout.width,y+.5);ctx.stroke();
   ctx.fillStyle="#0e3b43";ctx.font="700 27px 'Noto Sans TC',sans-serif";ctx.textAlign="left";ctx.textBaseline="alphabetic";
   ctx.fillText(`顏色圖例｜${layout.mode==="plan"?"原先規劃":"實際分類"}`,36,y+40);
   const colW=(layout.width-72)/EXPORT_COLS,itemY=y+83;
   layout.legendItems.forEach((item,i)=>{ const col=i%EXPORT_COLS,row=Math.floor(i/EXPORT_COLS),x=36+col*colW,yy=itemY+row*48;
     ctx.fillStyle=item.color;ctx.fillRect(x,yy-21,29,29);ctx.strokeStyle="rgba(0,0,0,.22)";ctx.strokeRect(x+.5,yy-20.5,28,28);
     ctx.fillStyle="#203236";ctx.font="600 21px 'Noto Sans TC',sans-serif";ctx.fillText(item.name,x+41,yy+2,colW-49); }); }
-function drawExportList(ctx,layout){ if(!layout.includeList)return; const top=layout.mapH+EXPORT_LEGEND_H,pad=32,colW=(layout.width-pad*2)/EXPORT_COLS;
+function drawExportList(ctx,layout){ if(!layout.includeList)return; const top=layout.mapH+layout.legendH,pad=32,colW=(layout.width-pad*2)/EXPORT_COLS;
   ctx.fillStyle="#f7f9f9";ctx.fillRect(0,top,layout.width,layout.listH);ctx.strokeStyle="#cad4d5";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,top+.5);ctx.lineTo(layout.width,top+.5);ctx.stroke();
   ctx.fillStyle="#0e3b43";ctx.font="700 34px 'Noto Sans TC',sans-serif";ctx.textAlign="left";ctx.textBaseline="alphabetic";ctx.fillText("店家對照",pad,top+45);
   if(!layout.shops.length){ctx.fillStyle="#627579";ctx.font="22px 'Noto Sans TC',sans-serif";ctx.fillText("尚無店家資料",pad,top+94);return;}
@@ -764,9 +789,9 @@ function buildSVG(opts={}){ const layout=exportLayout(opts);let r=`<svg xmlns="h
   if(state.showGrid){r+=`<g stroke="#143237" stroke-opacity=".13" stroke-width="0.5">`;for(let c=0;c<=GRID_W;c++)r+=`<line x1="${(c*CW).toFixed(1)}" y1="0" x2="${(c*CW).toFixed(1)}" y2="${imgH}"/>`;for(let rr=0;rr<=GRID_H;rr++)r+=`<line x1="0" y1="${(rr*CH).toFixed(1)}" x2="${imgW}" y2="${(rr*CH).toFixed(1)}"/>`;r+=`</g>`;}
   if(layout.mode!=="plan"&&!layout.omitShopLabels)layout.shops.forEach(sh=>{const num=numbers[sh.id];shopLabelAnchors(sh.id).forEach(anchor=>{const cx=(anchor[1]+.5)*CW,cy=(anchor[0]+.5)*CH;r+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${(CH*.75).toFixed(1)}" fill="#0e3b43"/><text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" fill="#fff" font-size="${(CH*.9).toFixed(1)}" font-weight="700" text-anchor="middle" dominant-baseline="central">${num}</text>`;});});
   r+=`</g>`;
-  const ly=layout.mapH,colW=(layout.width-72)/EXPORT_COLS;r+=`<rect x="0" y="${ly}" width="${layout.width}" height="${EXPORT_LEGEND_H}" fill="#fff"/><line x1="0" y1="${ly}" x2="${layout.width}" y2="${ly}" stroke="#cad4d5"/><text x="36" y="${ly+40}" fill="#0e3b43" font-size="27" font-weight="700">顏色圖例｜${layout.mode==="plan"?"原先規劃":"實際分類"}</text>`;
+  const ly=layout.mapH,colW=(layout.width-72)/EXPORT_COLS;r+=`<rect x="0" y="${ly}" width="${layout.width}" height="${layout.legendH}" fill="#fff"/><line x1="0" y1="${ly}" x2="${layout.width}" y2="${ly}" stroke="#cad4d5"/><text x="36" y="${ly+40}" fill="#0e3b43" font-size="27" font-weight="700">顏色圖例｜${layout.mode==="plan"?"原先規劃":"實際分類"}</text>`;
   layout.legendItems.forEach((item,i)=>{const col=i%EXPORT_COLS,row=Math.floor(i/EXPORT_COLS),x=36+col*colW,y=ly+83+row*48;r+=`<rect x="${x.toFixed(1)}" y="${(y-21).toFixed(1)}" width="29" height="29" rx="4" fill="${item.color}" stroke="#000" stroke-opacity=".22"/><text x="${(x+41).toFixed(1)}" y="${(y+2).toFixed(1)}" fill="#203236" font-size="21" font-weight="600">${xesc(item.name)}</text>`;});
-  if(layout.includeList){const top=layout.mapH+EXPORT_LEGEND_H,pad=32,listColW=(layout.width-pad*2)/EXPORT_COLS;r+=`<rect x="0" y="${top}" width="${layout.width}" height="${layout.listH}" fill="#f7f9f9"/><line x1="0" y1="${top}" x2="${layout.width}" y2="${top}" stroke="#cad4d5"/><text x="${pad}" y="${top+45}" fill="#0e3b43" font-size="34" font-weight="700">店家對照</text>`;
+  if(layout.includeList){const top=layout.mapH+layout.legendH,pad=32,listColW=(layout.width-pad*2)/EXPORT_COLS;r+=`<rect x="0" y="${top}" width="${layout.width}" height="${layout.listH}" fill="#f7f9f9"/><line x1="0" y1="${top}" x2="${layout.width}" y2="${top}" stroke="#cad4d5"/><text x="${pad}" y="${top+45}" fill="#0e3b43" font-size="34" font-weight="700">店家對照</text>`;
     if(!layout.shops.length)r+=`<text x="${pad}" y="${top+94}" fill="#627579" font-size="22">尚無店家資料</text>`;
     for(let col=0;col<EXPORT_COLS;col++){let y=top+67,cellX=pad+col*listColW;layout.listColumns[col].forEach(entry=>{const {sh,lines,height}=entry,x=cellX+9,num=numbers[sh.id],cat=catById(sh.cat),nameY=y+(lines.length>1?22:25),catY=y+(lines.length>1?79:52);r+=`<rect x="${cellX.toFixed(1)}" y="${y}" width="${listColW.toFixed(1)}" height="${height}" fill="${cat?.color||"#D9DEE0"}" fill-opacity=".14" stroke="#5a6e72" stroke-opacity=".24"/><circle cx="${(x+20).toFixed(1)}" cy="${(y+height/2).toFixed(1)}" r="20" fill="#0e3b43"/><text x="${(x+20).toFixed(1)}" y="${(y+height/2).toFixed(1)}" fill="#fff" font-size="19" font-weight="700" text-anchor="middle" dominant-baseline="central">${num}</text><text x="${(x+50).toFixed(1)}" y="${nameY}" fill="#1c2b2e" font-size="27" font-weight="600">${lines.map((line,i)=>`<tspan x="${(x+50).toFixed(1)}" y="${nameY+i*28}">${xesc(line)}</tspan>`).join("")}</text><text x="${(x+50).toFixed(1)}" y="${catY}" fill="#53676b" font-size="21">${xesc(cat?cat.name:"")}</text>`;y+=height;});}
   }

@@ -35,8 +35,8 @@
   .spacer{flex:1}
 
   .stagewrap{position:relative;flex:1 1 auto;overflow:hidden;background:#e9edec;touch-action:none;min-height:0}
-  #cstage{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
-  #cstage canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block}
+  #cstage{position:absolute;inset:0;transform-origin:0 0;will-change:transform}
+  #cstage canvas{position:absolute;top:0;left:0;display:block}
   #base{z-index:1} #overlay{z-index:2}
 
   /* floating controls over map */
@@ -44,15 +44,23 @@
   .fab{width:46px;height:46px;border-radius:23px;background:#fff;border:1px solid var(--line-strong);box-shadow:0 2px 8px rgba(0,0,0,.15);
     display:grid;place-items:center;font-size:20px;color:var(--ink)}
   .zoomstack{position:absolute;right:10px;top:10px;z-index:8;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line-strong);border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.12)}
-  .zoomstack button{width:44px;height:42px;font-size:20px;color:var(--ink)} .zoomstack button+button{border-top:1px solid var(--line)}
+  .zoomstack button{width:36px;height:34px;font-size:17px;color:var(--ink);display:flex;align-items:center;justify-content:center} .zoomstack button+button{border-top:1px solid var(--line)}
+  .zoomstack .ic{width:17px;height:17px}
 
   .selbar{position:absolute;left:10px;right:10px;bottom:10px;z-index:8;background:none;padding:0;display:none;flex-direction:column;gap:6px}
   .selbar.on{display:flex}
-  .selactions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;width:100%}
+  .selactions.cutactions{grid-template-columns:.85fr .85fr 1.9fr .8fr .8fr}
+  .selbar .depthctl{display:flex;align-items:center;background:#fff;border-radius:9px;height:32px;overflow:hidden;
+    box-shadow:0 2px 10px rgba(0,0,0,.24);color:var(--ink);font-weight:600;font-size:13px}
+  .selbar .depthctl button{flex:0 0 34px;width:34px;height:100%;border-radius:0;box-shadow:none;background:#eef3f3;font-size:17px;line-height:1;padding:0}
+  .selbar .depthctl span{flex:1;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .selbar .cutactions button{font-size:12px;padding:0 2px}
+  .selbar #cutStyle.solid{background:#1c1c1c;color:#fff}
+  .selactions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;width:100%}
   .selbar button{min-width:0;width:100%;border-radius:9px;height:32px;padding:0 6px;font-weight:600;font-size:13px;white-space:nowrap;
     box-shadow:0 2px 10px rgba(0,0,0,.24)}
   .selbar .assign{background:var(--accent);color:#fff} .selbar .clr{background:#12525c;color:#dfeff0}.selbar .move{background:#dcebec;color:var(--ink)}
-  .selbar .erase{background:var(--accent-ink);color:#fff} .selbar .diag{background:#fff;color:var(--ink)}
+  .selbar .erase{background:var(--accent-ink);color:#fff}
   .selbar button:disabled{opacity:.5}
 
   .targetbar{position:absolute;left:10px;right:10px;top:10px;z-index:8;background:#b5401f;color:#fff;border-radius:12px;
@@ -175,8 +183,9 @@
     header h1{font-size:14px;overflow:hidden;text-overflow:ellipsis}
     .icnbtn{height:32px;padding:0 10px}.topbar{padding:5px 6px;gap:5px;flex-wrap:nowrap;overflow-x:auto}
     .topbar{padding:5px 5px;gap:4px}.topbar .seg button{height:34px;padding:0 8px}.topbar .minibtn{height:34px;padding:0 8px}
-    .zoomstack{right:8px;top:8px}.zoomstack button{width:48px;height:48px}.fab-col{right:8px;bottom:8px}.fab{width:50px;height:50px;border-radius:25px}
+    .zoomstack{right:8px;top:8px}.zoomstack button{width:40px;height:38px}.fab-col{right:8px;bottom:8px}.fab{width:50px;height:50px;border-radius:25px}
     .selbar{left:8px;right:8px;bottom:8px;padding:0}.selbar button{height:34px;padding:0 4px;font-size:13px}
+    .selbar .depthctl{height:34px}.selbar .depthctl button{height:34px}
     .targetbar{left:8px;right:8px;top:8px}.maphint{left:8px;top:8px;max-width:calc(100% - 78px);overflow:hidden;text-overflow:ellipsis}
     .legendgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 10px;padding:10px}.fabrow{right:8px;bottom:8px}.legendpanel{left:8px;right:8px;bottom:8px}body.selbar-on .fabrow{bottom:50px}
     .listwrap{max-height:42dvh}.shopitem .meta{max-width:34vw;overflow:hidden;text-overflow:ellipsis}
@@ -194,6 +203,7 @@
 <div class="topbar">
   <div class="seg" id="modeSeg">
     <button data-m="assign" class="on"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20.5h4L20 8.5l-4-4L4 16.5v4z"/><path d="M14.5 6l4 4"/></svg>編輯</button>
+    <button data-m="cut"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4L8.5 15.5M20 20L8.5 8.5"/><circle cx="6" cy="6.5" r="2.4"/><circle cx="6" cy="17.5" r="2.4"/></svg>切線</button>
     <button data-m="view"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="3"/></svg>查看</button>
   </div>
   <div class="seg view" id="viewSeg">
@@ -202,15 +212,18 @@
   </div>
   <div class="spacer"></div>
   <button class="minibtn" id="btnCats"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5V4.5h6l10 10-6 6-10-10z"/><circle cx="7.7" cy="8.3" r="1.2"/></svg>分類</button>
-  <button class="minibtn" id="btnFit">全覽</button>
 </div>
 
 <div class="stagewrap" id="stagewrap">
   <div id="cstage"><canvas id="base"></canvas><canvas id="overlay"></canvas></div>
   <div class="maphint" id="mapHint">點按多選・拖曳框選・雙指移動縮放</div>
-  <div class="zoomstack"><button id="zoomIn">＋</button><button id="zoomOut">−</button></div>
+  <div class="zoomstack"><button id="zoomIn">＋</button><button id="zoomOut">−</button><button id="btnFit" aria-label="全覽" title="全覽"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>
+  <div class="selbar" id="cutbar">
+    <div class="selactions cutactions"><button class="move" id="cutStyle">實線</button><button class="move" id="cutSide">上側</button>
+      <div class="depthctl"><button id="cutDepthDown" type="button" aria-label="減少深度">−</button><span id="cutDepthVal">深度 0</span><button id="cutDepthUp" type="button" aria-label="增加深度">＋</button></div>
+      <button class="assign" id="cutOk">完成</button><button class="erase" id="cutDelete">刪除</button></div></div>
   <div class="selbar" id="selbar">
-    <div class="selactions"><button class="move" id="selMove">移動</button><button class="assign" id="selAssign">編輯</button><button class="diag" id="selDiag">斜角</button><button class="clr" id="selClr">完成</button><button class="erase" id="selErase">刪除</button></div></div>
+    <div class="selactions"><button class="move" id="selMove">移動</button><button class="assign" id="selAssign">編輯</button><button class="clr" id="selClr">完成</button><button class="erase" id="selErase">刪除</button></div></div>
   <div class="targetbar" id="targetbar"><span class="grow" id="targetName"></span>
     <span style="font-size:13px;opacity:.9">點格加入/移除</span><button id="targetDone">完成</button></div>
 </div>
@@ -383,11 +396,13 @@ const LS_KEY="grid-market-v4";
 const TAXONOMY_VERSION=4;
 
 let state={ zones:clone(DEFAULT_ZONES), cats:clone(DEFAULT_CATS), shops:[], cells:{}, gridW:DEFAULT_GRID_W,gridH:DEFAULT_GRID_H,view:"actual",
-  fillA:80, showGrid:true, showLabels:true, showNames:false, listCollapsed:false, lastShopId:"", taxonomyVersion:0 };
+  fillA:80, showGrid:true, showLabels:true, showNames:false, listCollapsed:false, lastShopId:"", taxonomyVersion:0, cuts:[] };
 let mode="assign", activeShop=null, inspectedShop=null, lastShopName="", shopFilter="", legendOpen=false;
 let selection=new Set();
 let numbers={};   // shopId -> number
-const HISTORY_LIMIT=60, HISTORY_KEYS=["taxonomyVersion","gridW","gridH","zones","cats","shops","cells"];
+let bandCover=new Set();
+let canvasDPR=1, renderedT={tx:0,ty:0,s:1}, renderTimer=null;
+const HISTORY_LIMIT=60, HISTORY_KEYS=["taxonomyVersion","gridW","gridH","zones","cats","shops","cells","cuts"];
 let undoStack=[],redoStack=[],historyCurrent=null,historyReady=false,historyBusy=false;
 
 /* ---- utils ---- */
@@ -400,9 +415,9 @@ function updateHistoryButtons(){const u=$("#btnUndo"),r=$("#btnRedo");if(u)u.dis
 function recordHistory(){if(!historyReady||historyBusy)return;const next=historySnapshot();if(historyCurrent&&JSON.stringify(next)===JSON.stringify(historyCurrent))return;if(historyCurrent){undoStack.push(historyCurrent);if(undoStack.length>HISTORY_LIMIT)undoStack.shift();}historyCurrent=next;redoStack=[];updateHistoryButtons();}
 function save(){recordHistory();persistState();}
 function initHistory(){historyCurrent=historySnapshot();undoStack=[];redoStack=[];historyReady=true;historyBusy=false;updateHistoryButtons();}
-function restoreHistorySnapshot(snapshot){historyBusy=true;HISTORY_KEYS.forEach(k=>state[k]=clone(snapshot[k]));selection.clear();activeShop=null;clearShopInspection();cellKey=null;selRect=null;selStart=null;lastShopName=shopById(state.lastShopId)?.name||"";$("#targetbar").classList.remove("on");closeAllSheets();$("#backdrop").classList.remove("on");syncGridMetrics();recompute();syncListCollapse(true);renderLegend();updateSelBar();fitBase();applyT();drawBase();drawOverlay();renderList();updateGridSheet();historyCurrent=historySnapshot();historyBusy=false;persistState();updateHistoryButtons();}
-function undoHistory(){if(!undoStack.length)return false;redoStack.push(historyCurrent);const target=undoStack.pop();restoreHistorySnapshot(target);toast("已復原上一步");return true;}
-function redoHistory(){if(!redoStack.length)return false;undoStack.push(historyCurrent);if(undoStack.length>HISTORY_LIMIT)undoStack.shift();const target=redoStack.pop();restoreHistorySnapshot(target);toast("已重做下一步");return true;}
+function restoreHistorySnapshot(snapshot){ editingCut=null; if(typeof syncCutBar==="function")syncCutBar();historyBusy=true;HISTORY_KEYS.forEach(k=>state[k]=clone(snapshot[k]));selection.clear();activeShop=null;clearShopInspection();cellKey=null;selRect=null;selStart=null;lastShopName=shopById(state.lastShopId)?.name||"";$("#targetbar").classList.remove("on");closeAllSheets();$("#backdrop").classList.remove("on");syncGridMetrics();recompute();syncListCollapse(true);renderLegend();updateSelBar();fitBase();applyT();drawBase();drawOverlay();renderList();updateGridSheet();historyCurrent=historySnapshot();historyBusy=false;persistState();updateHistoryButtons();}
+function undoHistory(){if(!undoStack.length)return false;redoStack.push(historyCurrent);const target=undoStack.pop();restoreHistorySnapshot(target);return true;}
+function redoHistory(){if(!redoStack.length)return false;undoStack.push(historyCurrent);if(undoStack.length>HISTORY_LIMIT)undoStack.shift();const target=redoStack.pop();restoreHistorySnapshot(target);return true;}
 function esc(s){return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
 function hexA(hex,a){const h=hex.replace("#","");const n=h.length===3?h.split("").map(x=>x+x).join(""):h;
   return `rgba(${parseInt(n.slice(0,2),16)},${parseInt(n.slice(2,4),16)},${parseInt(n.slice(4,6),16)},${a})`;}
@@ -443,11 +458,8 @@ function normalizeTaxonomy(){
   }
   state.zones=clone(DEFAULT_ZONES); state.cats=clone(DEFAULT_CATS); state.taxonomyVersion=TAXONOMY_VERSION; save();
 }
-function normalizeWalls(){ let changed=false,wallZone=state.zones.find(z=>z.id==="zw"),wallCat=state.cats.find(c=>c.id==="c10");
-  if(!wallZone){wallZone=clone(DEFAULT_ZONES[9]);state.zones.push(wallZone);changed=true;} if(wallZone.color!=="#3B3838"){wallZone.color="#3B3838";changed=true;}
-  if(!wallCat){wallCat=clone(DEFAULT_CATS[9]);state.cats.push(wallCat);changed=true;} if(wallCat.color!=="#3B3838"){wallCat.color="#3B3838";changed=true;}
+function normalizeWalls(){ let changed=false;
   const otherZone=state.zones.find(z=>z.id==="z9"),otherCat=state.cats.find(c=>c.id==="c9");if(otherZone&&otherZone.color!=="#D9DEE0"){otherZone.color="#D9DEE0";changed=true;}if(otherCat&&otherCat.color!=="#D9DEE0"){otherCat.color="#D9DEE0";changed=true;}
-  for(const k in state.cells){const cur=state.cells[k];if(cur.cat!=="c10")continue;cur.plan="zw";delete cur.cat;delete cur.shop;changed=true;}
   if(changed)save(); }
 function nextUnnamedName(catId){ const base="未命名"+(catById(catId)?.name||"區域"); let n=1;
   while(state.shops.some(sh=>sh.name===base+n))n++; return base+n; }
@@ -457,7 +469,7 @@ function ensureNamedRegions(){
   state.shops.forEach(sh=>{if(!String(sh.name||"").trim())sh.name=nextUnnamedName(sh.cat);});
   const pending=new Set(Object.keys(state.cells).filter(k=>state.cells[k].cat&&!state.cells[k].shop)); let made=0;
   while(pending.size){ const first=pending.values().next().value,catId=state.cells[first].cat,q=[first],region=[]; pending.delete(first);
-    while(q.length){ const k=q.pop(),[r,c]=keyRC(k); region.push(k);
+    while(q.length){ const k=q.pop(); region.push(k); if(isBandKey(k)){cellNeighbors(k).forEach(nk=>{if(pending.delete(nk))q.push(nk);});continue;} const [r,c]=keyRC(k);
       [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([nr,nc])=>{const nk=nr+"_"+nc;if(pending.has(nk)&&state.cells[nk].cat===catId){pending.delete(nk);q.push(nk);}}); }
     const sh=createUnnamedShop(catId); region.forEach(k=>state.cells[k].shop=sh.id); made++;
   }
@@ -475,20 +487,14 @@ function toast(msg){ const el=$("#toast"); el.textContent=msg; el.classList.add(
 function cellShape(d){return d&&Array.isArray(d.poly)?d.poly:null;}
 function cellHidden(d){const p=cellShape(d);return !!p&&p.length<3;}
 function cellPath(ctx,r,c,poly){ctx.beginPath();poly.forEach((p,i)=>{const x=(c+p[0])*CW,y=(r+p[1])*CH;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.closePath();}
-function fillCell(ctx,r,c,d,color){const poly=cellShape(d);
+function fillPoly(ctx,r,c,poly,color){
   if(!poly){ctx.fillStyle=color;ctx.fillRect(c*CW,r*CH,CW+0.6,CH+0.6);return;}
   if(poly.length<3)return; ctx.fillStyle=color;cellPath(ctx,r,c,poly);ctx.fill();}
+function fillCell(ctx,r,c,d,color){ fillPoly(ctx,r,c,cellShape(d),color); }
 function svgCell(r,c,poly,attrs){
   if(!poly)return `<rect x="${(c*CW).toFixed(1)}" y="${(r*CH).toFixed(1)}" width="${CW.toFixed(1)}" height="${CH.toFixed(1)}" ${attrs}/>`;
   if(poly.length<3)return "";
   return `<polygon points="${poly.map(pt=>((c+pt[0])*CW).toFixed(2)+","+((r+pt[1])*CH).toFixed(2)).join(" ")}" ${attrs}/>`;}
-function clipCellByCorner(i,j,W,H,corner){
-  const f=(u,v)=>{const a=u/W,b=v/H;return corner===0?a+b-1:corner===1?b-a:corner===2?1-a-b:a-b;};
-  const src=[[0,0],[1,0],[1,1],[0,1]],out=[],E=1e-9;
-  for(let n=0;n<src.length;n++){const cur=src[n],nx=src[(n+1)%src.length],dc=f(i+cur[0],j+cur[1]),dn=f(i+nx[0],j+nx[1]);
-    if(dc<=E)out.push(cur);
-    if((dc<-E&&dn>E)||(dc>E&&dn<-E)){const t=dc/(dc-dn);out.push([cur[0]+(nx[0]-cur[0])*t,cur[1]+(nx[1]-cur[1])*t]);}}
-  return out;}
 function cellSideIntervals(d,side){ const poly=cellShape(d);
   if(!poly)return [[0,1]]; if(poly.length<3)return [];
   const out=[],E=1e-6;
@@ -513,7 +519,8 @@ function shopBorderSegments(k,d){ const [r,c]=keyRC(k),poly=cellShape(d),segs=[]
     else if(Math.abs(q[0])<E&&Math.abs(w[0])<E)side=2; else if(Math.abs(q[0]-1)<E&&Math.abs(w[0]-1)<E)side=3;
     if(side<0){ segs.push([(c+q[0])*CW,(r+q[1])*CH,(c+w[0])*CW,(r+w[1])*CH]); continue; }
     const nd=nbr(side),lo=side<2?Math.min(q[0],w[0]):Math.min(q[1],w[1]),hi=side<2?Math.max(q[0],w[0]):Math.max(q[1],w[1]);
-    const subs=(nd&&nd.shop===d.shop&&!cellHidden(nd))?cellSideIntervals(nd,opp(side)):[];
+    const nkey=(r+(side===0?-1:side===1?1:0))+"_"+(c+(side===2?-1:side===3?1:0));
+    const subs=(nd&&nd.shop===d.shop&&!cellHidden(nd)&&!cellCovered(nkey))?cellSideIntervals(nd,opp(side)):[];
     subtractIntervals([lo,hi],subs).forEach(part=>{ const s0=part[0],s1=part[1];
       if(side===0)segs.push([(c+s0)*CW,r*CH,(c+s1)*CW,r*CH]);
       else if(side===1)segs.push([(c+s0)*CW,(r+1)*CH,(c+s1)*CW,(r+1)*CH]);
@@ -525,20 +532,33 @@ function polyArea(poly){let a=0;for(let i=0;i<poly.length;i++){const q=poly[i],w
 /* ---- canvas ---- */
 const base=$("#base"), overlay=$("#overlay"), bctx=base.getContext("2d"), octx=overlay.getContext("2d");
 let CW=CELLPX, CH=CELLPX;
-function syncGridMetrics(){let maxR=-1,maxC=-1;for(const k in state.cells){const [r,c]=keyRC(k);maxR=Math.max(maxR,r);maxC=Math.max(maxC,c);}GRID_W=Math.max(1,Math.round(Number(state.gridW)||DEFAULT_GRID_W),maxC+1);GRID_H=Math.max(1,Math.round(Number(state.gridH)||DEFAULT_GRID_H),maxR+1);state.gridW=GRID_W;state.gridH=GRID_H;imgW=GRID_W*CELLPX;imgH=GRID_H*CELLPX;CW=CELLPX;CH=CELLPX;base.width=overlay.width=imgW;base.height=overlay.height=imgH;}
+function syncGridMetricsInner(){let maxR=-1,maxC=-1;for(const k in state.cells){if(isBandKey(k))continue;const [r,c]=keyRC(k);maxR=Math.max(maxR,r);maxC=Math.max(maxC,c);}GRID_W=Math.max(1,Math.round(Number(state.gridW)||DEFAULT_GRID_W),maxC+1);GRID_H=Math.max(1,Math.round(Number(state.gridH)||DEFAULT_GRID_H),maxR+1);state.gridW=GRID_W;state.gridH=GRID_H;imgW=GRID_W*CELLPX;imgH=GRID_H*CELLPX;CW=CELLPX;CH=CELLPX;if(typeof resizeCanvases==="function")resizeCanvases();}
 syncGridMetrics();
 
 /* ---- transform (pan/zoom) ---- */
 let baseW=0, baseH=0, tx=0, ty=0, s=1;
-function fitBase(){ const wrap=$("#stagewrap"); baseW=wrap.clientWidth; baseH=baseW*imgH/imgW;
-  $("#cstage").style.width=baseW+"px"; $("#cstage").style.height=baseH+"px"; }
-function applyT(){ $("#cstage").style.transform=`translate(${tx}px,${ty}px) scale(${s})`; }
+function syncGridMetrics(){ syncGridMetricsInner(); if(typeof refreshBands==="function")refreshBands(); }
+function resizeCanvases(){ const wrap=$("#stagewrap"); const W=Math.max(1,wrap.clientWidth), H=Math.max(1,wrap.clientHeight);
+  canvasDPR=Math.min(window.devicePixelRatio||1,3);
+  [base,overlay].forEach(cv=>{ const w=Math.round(W*canvasDPR), h=Math.round(H*canvasDPR);
+    if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;} cv.style.width=W+"px"; cv.style.height=H+"px"; }); }
+function viewK(){ return (baseW*s)/imgW; }               // image unit -> css px
+function beginView(ctx,cv){ const k=viewK()*canvasDPR;
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.setTransform(k,0,0,k,tx*canvasDPR,ty*canvasDPR); }
+function viewDirty(){ return renderedT.tx!==tx||renderedT.ty!==ty||renderedT.s!==s; }
+function renderAll(){ if(renderTimer){clearTimeout(renderTimer);renderTimer=null;}
+  drawBaseLayer(); drawOverlayLayer(); renderedT={tx,ty,s}; $("#cstage").style.transform="none"; }
+function fitBase(){ const wrap=$("#stagewrap"); baseW=wrap.clientWidth; baseH=baseW*imgH/imgW; resizeCanvases(); }
+function applyT(){ const ratio=s/(renderedT.s||1);
+  $("#cstage").style.transform=`translate(${tx-renderedT.tx*ratio}px,${ty-renderedT.ty*ratio}px) scale(${ratio})`;
+  if(renderTimer)clearTimeout(renderTimer); renderTimer=setTimeout(()=>{renderTimer=null;renderAll();},110); }
 function clampT(){ const wrap=$("#stagewrap"); const W=wrap.clientWidth,H=wrap.clientHeight;
   const cwd=baseW*s, chd=baseH*s; const pad=60;
   tx=cwd<=W? clamp(tx,-pad,W-cwd+pad) : clamp(tx, W-cwd-pad, pad);
   ty=chd<=H? clamp(ty,-pad,H-chd+pad) : clamp(ty, H-chd-pad, pad);
 }
-function fit(){ fitBase(); s=1; tx=0; ty=($("#stagewrap").clientHeight-baseH)/2; clampT(); applyT(); }
+function fit(){ fitBase(); s=1; tx=0; ty=($("#stagewrap").clientHeight-baseH)/2; clampT(); applyT(); renderAll(); }
 function zoomAt(cx,cy,ns){ ns=clamp(ns,0.4,16); const wrap=$("#stagewrap").getBoundingClientRect();
   const px=cx-wrap.left, py=cy-wrap.top; const contentX=(px-tx)/s, contentY=(py-ty)/s;
   s=ns; tx=px-contentX*s; ty=py-contentY*s; clampT(); applyT(); }
@@ -549,25 +569,124 @@ $("#btnUndo").onclick=undoHistory;$("#btnRedo").onclick=redoHistory;
 document.addEventListener("keydown",e=>{if(!(e.ctrlKey||e.metaKey))return;const tag=e.target?.tagName;if(["INPUT","TEXTAREA","SELECT"].includes(tag)||e.target?.isContentEditable)return;const key=e.key.toLowerCase();if(key==="z"){e.preventDefault();if(e.shiftKey)redoHistory();else undoHistory();}else if(key==="y"){e.preventDefault();redoHistory();}});
 
 /* ---- pointer -> cell ---- */
-function cellAt(clientX,clientY){ const rect=overlay.getBoundingClientRect();
-  const x=(clientX-rect.left)*(imgW/rect.width), y=(clientY-rect.top)*(imgH/rect.height);
+function cellAt(clientX,clientY){ const p=imgPoint(clientX,clientY), x=p.x, y=p.y;
+  if(state.view==="actual"){ const bk=bandCellAt(x,y); if(bk)return bk; }
   return clamp(Math.floor(y/CH),0,GRID_H-1)+"_"+clamp(Math.floor(x/CW),0,GRID_W-1); }
+
+/* ---- cut lines & aligned bands ---- */
+function imgPoint(clientX,clientY){ const wr=$("#stagewrap").getBoundingClientRect(), k=viewK()||1;
+  return {x:((clientX-wr.left)-tx)/k, y:((clientY-wr.top)-ty)/k}; }
+function snapPoint(clientX,clientY){ const p=imgPoint(clientX,clientY);
+  return {x:clamp(Math.round(p.x/CW),0,GRID_W), y:clamp(Math.round(p.y/CH),0,GRID_H)}; }
+function cutsList(){ if(!Array.isArray(state.cuts))state.cuts=[]; return state.cuts; }
+function cutById(id){ return cutsList().find(c=>c.id===id)||null; }
+function isBandKey(k){ return k.charCodeAt(0)===66; }
+function bandKey(id,i,j){ return "B"+id+"_"+i+"_"+j; }
+function parseBandKey(k){ const p=k.slice(1).split("_"); return {id:p[0],i:+p[1],j:+p[2]}; }
+function cutGeom(cut){ const U=(CW+CH)/2, ax=cut.ax*CW, ay=cut.ay*CH, bx=cut.bx*CW, by=cut.by*CH;
+  const dx=bx-ax, dy=by-ay, L=Math.hypot(dx,dy)||1, ux=dx/L, uy=dy/L;
+  const side=cut.side===0?0:(cut.side<0?-1:1), sign=side<0?-1:1;
+  const k=Math.max(1,Math.round(L/U)), depth=Math.max(0,cut.depth|0);
+  return {ax,ay,bx,by,ux,uy,nx:-uy*sign,ny:ux*sign,L,U,k,step:L/k,depth,side,
+    jMin:side===0?-depth:0, jMax:depth-1}; }
+function bandQuad(g,i,j){ const p=(u,v)=>[g.ax+g.ux*u+g.nx*v, g.ay+g.uy*u+g.ny*v];
+  return [p(i*g.step,j*g.U),p((i+1)*g.step,j*g.U),p((i+1)*g.step,(j+1)*g.U),p(i*g.step,(j+1)*g.U)]; }
+function bandOuter(g){ const p=(u,v)=>[g.ax+g.ux*u+g.nx*v, g.ay+g.uy*u+g.ny*v], D0=g.jMin*g.U, D1=(g.jMax+1)*g.U;
+  return [p(0,D0),p(g.L,D0),p(g.L,D1),p(0,D1)]; }
+function bandLocate(g,px,py){ if(!g.depth)return null; const rx=px-g.ax, ry=py-g.ay;
+  const u=rx*g.ux+ry*g.uy, v=rx*g.nx+ry*g.ny;
+  if(u<0||u>g.L||v<g.jMin*g.U||v>(g.jMax+1)*g.U)return null;
+  return {i:clamp(Math.floor(u/g.step),0,g.k-1), j:clamp(Math.floor(v/g.U),g.jMin,g.jMax)}; }
+function refreshBands(){ bandCover=new Set();
+  cutsList().forEach(cut=>{ if(!cut.depth)return; const g=cutGeom(cut), pts=bandOuter(g);
+    const xs=pts.map(q=>q[0]), ys=pts.map(q=>q[1]);
+    const c0=clamp(Math.floor(Math.min.apply(null,xs)/CW),0,GRID_W-1), c1=clamp(Math.ceil(Math.max.apply(null,xs)/CW),0,GRID_W-1);
+    const r0=clamp(Math.floor(Math.min.apply(null,ys)/CH),0,GRID_H-1), r1=clamp(Math.ceil(Math.max.apply(null,ys)/CH),0,GRID_H-1);
+    const eps=g.U*0.02, inside=(px,py)=>{ const rx=px-g.ax, ry=py-g.ay, u=rx*g.ux+ry*g.uy, v=rx*g.nx+ry*g.ny;
+      return u>=-eps&&u<=g.L+eps&&v>=g.jMin*g.U-eps&&v<=(g.jMax+1)*g.U+eps; };
+    for(let r=r0;r<=r1;r++)for(let c=c0;c<=c1;c++){
+      if(inside(c*CW,r*CH)&&inside((c+1)*CW,r*CH)&&inside((c+1)*CW,(r+1)*CH)&&inside(c*CW,(r+1)*CH))bandCover.add(r+"_"+c); } }); }
+function cellCovered(k){ return bandCover.has(k); }
+function bandCellAt(px,py){ for(const cut of cutsList()){ if(!cut.depth)continue;
+    const g=cutGeom(cut), hit=bandLocate(g,px,py); if(hit)return bandKey(cut.id,hit.i,hit.j); } return null; }
+function keyQuad(k,d){
+  if(isBandKey(k)){ const b=parseBandKey(k), cut=cutById(b.id); if(!cut||!cut.depth)return null;
+    const g=cutGeom(cut); if(b.i<0||b.i>=g.k||b.j<g.jMin||b.j>g.jMax)return null; return bandQuad(g,b.i,b.j); }
+  if(cellCovered(k))return null;
+  const rc=keyRC(k), r=rc[0], c=rc[1], poly=cellShape(d||state.cells[k]);
+  if(poly){ if(poly.length<3)return null; return poly.map(q=>[(c+q[0])*CW,(r+q[1])*CH]); }
+  return [[c*CW,r*CH],[(c+1)*CW,r*CH],[(c+1)*CW,(r+1)*CH],[c*CW,(r+1)*CH]]; }
+function keyCenter(k){ const q=keyQuad(k); if(!q)return null; let x=0,y=0; q.forEach(pt=>{x+=pt[0];y+=pt[1];}); return [x/q.length,y/q.length]; }
+function cellVisible(k,d){ d=d||state.cells[k]; if(!d)return false;
+  if(isBandKey(k)){ const b=parseBandKey(k), cut=cutById(b.id); if(!cut||!cut.depth)return false;
+    const g=cutGeom(cut); return b.i>=0&&b.i<g.k&&b.j>=g.jMin&&b.j<=g.jMax; }
+  return !cellHidden(d)&&!cellCovered(k); }
+function cellNeighbors(k){ if(isBandKey(k)){ const b=parseBandKey(k);
+    return [bandKey(b.id,b.i,b.j-1),bandKey(b.id,b.i+1,b.j),bandKey(b.id,b.i,b.j+1),bandKey(b.id,b.i-1,b.j)]; }
+  const rc=keyRC(k), r=rc[0], c=rc[1]; return [(r-1)+"_"+c, r+"_"+(c+1), (r+1)+"_"+c, r+"_"+(c-1)]; }
+function fillQuad(ctx,q,color){ if(!q)return; ctx.fillStyle=color; ctx.beginPath();
+  q.forEach((pt,i)=>i?ctx.lineTo(pt[0],pt[1]):ctx.moveTo(pt[0],pt[1])); ctx.closePath(); ctx.fill(); }
+function svgQuad(q,attrs){ return q?`<polygon points="${q.map(pt=>pt[0].toFixed(2)+","+pt[1].toFixed(2)).join(" ")}" ${attrs}/>`:""; }
+function forEachBandCell(cb){ cutsList().forEach(cut=>{ if(!cut.depth)return; const g=cutGeom(cut);
+  for(let i=0;i<g.k;i++)for(let j=g.jMin;j<=g.jMax;j++){ const k=bandKey(cut.id,i,j), d=state.cells[k]; if(d)cb(k,d,bandQuad(g,i,j)); } }); }
+function pruneBandCells(){ for(const k in state.cells){ if(!isBandKey(k))continue; if(!cellVisible(k))delete state.cells[k]; } }
+function drawBandsBg(ctx,bg){ cutsList().forEach(cut=>{ if(!cut.depth)return; fillQuad(ctx,bandOuter(cutGeom(cut)),bg); }); }
+function drawBandGrid(ctx){ ctx.save(); ctx.lineWidth=Math.max(0.4,CW*0.04); ctx.strokeStyle="rgba(20,50,55,.16)";
+  cutsList().forEach(cut=>{ if(!cut.depth)return; const g=cutGeom(cut), D0=g.jMin*g.U, D1=(g.jMax+1)*g.U; ctx.beginPath();
+    for(let i=0;i<=g.k;i++){ const u=i*g.step; ctx.moveTo(g.ax+g.ux*u+g.nx*D0,g.ay+g.uy*u+g.ny*D0); ctx.lineTo(g.ax+g.ux*u+g.nx*D1,g.ay+g.uy*u+g.ny*D1); }
+    for(let j=g.jMin;j<=g.jMax+1;j++){ const v=j*g.U; ctx.moveTo(g.ax+g.nx*v,g.ay+g.ny*v); ctx.lineTo(g.ax+g.ux*g.L+g.nx*v,g.ay+g.uy*g.L+g.ny*v); }
+    ctx.stroke(); }); ctx.restore(); }
+function cutLineWidth(){ return Math.max(1.1,CW*0.42); }
+function drawCutLines(ctx,ghost){ ctx.save(); cutsList().forEach(cut=>{ const g=cutGeom(cut);
+    if(cut.wall){ ctx.setLineDash([]); ctx.lineCap="round"; ctx.strokeStyle="#2b2b2b"; ctx.lineWidth=cutLineWidth(); }
+    else if(ghost){ ctx.setLineDash([CW*0.7,CW*0.5]); ctx.lineCap="butt"; ctx.strokeStyle="rgba(20,50,55,.5)"; ctx.lineWidth=Math.max(0.8,CW*0.14); }
+    else return;
+    ctx.beginPath(); ctx.moveTo(g.ax,g.ay); ctx.lineTo(g.bx,g.by); ctx.stroke(); });
+  if(ghost)cutsList().forEach(cut=>{ const g=cutGeom(cut), on=cut===editingCut;
+    ctx.setLineDash([]); ctx.fillStyle=on?"#d64f27":"rgba(214,79,39,.55)";
+    [[g.ax,g.ay],[g.bx,g.by]].forEach(pt=>{ctx.beginPath();ctx.arc(pt[0],pt[1],Math.max(1.5,CW*0.34),0,7);ctx.fill();});
+    if(on){ ctx.strokeStyle="#d64f27"; ctx.lineWidth=Math.max(1.2,CW*0.2);
+      ctx.beginPath(); ctx.moveTo(g.ax,g.ay); ctx.lineTo(g.bx,g.by); ctx.stroke(); } });
+  ctx.setLineDash([]); ctx.restore(); }
+function svgCuts(){ let out=""; cutsList().forEach(cut=>{ if(!cut.wall)return; const g=cutGeom(cut);
+    out+=`<line x1="${g.ax.toFixed(2)}" y1="${g.ay.toFixed(2)}" x2="${g.bx.toFixed(2)}" y2="${g.by.toFixed(2)}" stroke="#2b2b2b" stroke-width="${cutLineWidth().toFixed(1)}" stroke-linecap="round"/>`; });
+  return out; }
+function svgBands(bg){ let out="";
+  forEachBandCell((k,d,q)=>{ if(!d.cat)return; const cat=catById(d.cat); if(cat)out+=svgQuad(q,`fill="${cat.color}" fill-opacity="${state.fillA/100}"`); });
+  if(state.showGrid)cutsList().forEach(cut=>{ if(!cut.depth)return; const g=cutGeom(cut), D0=g.jMin*g.U, D1=(g.jMax+1)*g.U;
+    out+=`<g stroke="#143237" stroke-opacity=".16" stroke-width="0.5">`;
+    for(let i=0;i<=g.k;i++){ const u=i*g.step; out+=`<line x1="${(g.ax+g.ux*u+g.nx*D0).toFixed(1)}" y1="${(g.ay+g.uy*u+g.ny*D0).toFixed(1)}" x2="${(g.ax+g.ux*u+g.nx*D1).toFixed(1)}" y2="${(g.ay+g.uy*u+g.ny*D1).toFixed(1)}"/>`; }
+    for(let j=g.jMin;j<=g.jMax+1;j++){ const v=j*g.U; out+=`<line x1="${(g.ax+g.nx*v).toFixed(1)}" y1="${(g.ay+g.ny*v).toFixed(1)}" x2="${(g.ax+g.ux*g.L+g.nx*v).toFixed(1)}" y2="${(g.ay+g.uy*g.L+g.ny*v).toFixed(1)}"/>`; }
+    out+=`</g>`; });
+  return out; }
+function pointSegDist(px,py,g){ const dx=g.bx-g.ax, dy=g.by-g.ay, L2=dx*dx+dy*dy||1;
+  const t=clamp(((px-g.ax)*dx+(py-g.ay)*dy)/L2,0,1);
+  return Math.hypot(px-(g.ax+dx*t), py-(g.ay+dy*t)); }
+function imgPerScreenPx(){ const f=viewK(); return f>0?1/f:1; }
+function cutNear(px,py){ const tol=Math.max(Math.max(CW,CH)*0.6, 26*imgPerScreenPx());
+  let best=null; cutsList().forEach(cut=>{ const d=pointSegDist(px,py,cutGeom(cut));
+    if(d<=tol&&(!best||d<best.d))best={cut,d}; }); return best?best.cut:null; }
+let cutDrag=null, editingCut=null;
+function afterCutChange(){ pruneBandCells(); refreshBands(); recompute(); save(); drawBase(); drawOverlay(); renderList(); }
 
 /* ---- gestures ---- */
 const wrap=$("#stagewrap"); const pts=new Map();
 let gest=null; // 'pan'|'select'|'pinch'
-let selStart=null, selRect=null, moved=false, panLast=null, panOrigin=null, pinch=null;
+let selStart=null, selStartPt=null, selRect=null, moved=false, panLast=null, panOrigin=null, pinch=null;
 let longPressTimer=null, longPressFired=false;
 function cancelLongPress(){ if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null;} }
 wrap.addEventListener("pointerdown",e=>{
   if(e.target.closest(".zoomstack,.fab-col,.selbar,.targetbar")) return;
   wrap.setPointerCapture(e.pointerId); pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(pts.size===2){ gest="pinch"; const p=[...pts.values()]; pinch={d:dist(p[0],p[1]),mx:(p[0].x+p[1].x)/2,my:(p[0].y+p[1].y)/2}; selRect=null;panOrigin=null;cancelLongPress();drawOverlay(); return; }
+  if(pts.size===2){ cutDrag=null; gest="pinch"; const p=[...pts.values()]; pinch={d:dist(p[0],p[1]),mx:(p[0].x+p[1].x)/2,my:(p[0].y+p[1].y)/2}; selRect=null;panOrigin=null;cancelLongPress();drawOverlay(); return; }
   moved=false; longPressFired=false; cancelLongPress();
+  if(mode==="cut"){
+    if(editingCut){ gest="pan"; cutDrag=null; moved=false; panLast={x:e.clientX,y:e.clientY}; panOrigin=null; return; }
+    const p=snapPoint(e.clientX,e.clientY); gest="cut"; cutDrag={a:p,b:p,start:imgPoint(e.clientX,e.clientY)}; drawOverlay(); return; }
   if(mode==="view"){ gest="pan"; panLast={x:e.clientX,y:e.clientY};panOrigin={x:e.clientX,y:e.clientY,k:cellAt(e.clientX,e.clientY)};
     const pressKey=panOrigin.k;
     longPressTimer=setTimeout(()=>{ longPressTimer=null; longPressFired=true; if(navigator.vibrate)navigator.vibrate(14); openCellSheet(pressKey); },550); }
-  else { gest="select"; selStart=cellAt(e.clientX,e.clientY); selRect=null; }
+  else { gest="select"; selStart=cellAt(e.clientX,e.clientY); selStartPt=imgPoint(e.clientX,e.clientY); selRect=null; }
 });
 wrap.addEventListener("pointermove",e=>{
   if(!pts.has(e.pointerId))return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
@@ -576,15 +695,24 @@ wrap.addEventListener("pointermove",e=>{
     s=clamp(s*(nd/pinch.d),0.4,16); tx=(nmx-wr.left)-cX*s; ty=(nmy-wr.top)-cY*s; clampT(); applyT();
     pinch={d:nd,mx:nmx,my:nmy}; return; }
   if(gest==="pan"){if(panOrigin&&Math.hypot(e.clientX-panOrigin.x,e.clientY-panOrigin.y)>5){moved=true;cancelLongPress();}tx+=e.clientX-panLast.x; ty+=e.clientY-panLast.y; panLast={x:e.clientX,y:e.clientY}; clampT(); applyT(); return; }
+  if(gest==="cut"&&cutDrag){ cutDrag.b=snapPoint(e.clientX,e.clientY); moved=true; drawOverlay(); return; }
   if(gest==="select"){ const k=cellAt(e.clientX,e.clientY); if(k!==selStart) moved=true;
-    const [r0,c0]=keyRC(selStart),[r1,c1]=keyRC(k); selRect=[Math.min(r0,r1),Math.min(c0,c1),Math.max(r0,r1),Math.max(c0,c1)]; drawOverlay(); }
+    const q=imgPoint(e.clientX,e.clientY);
+    selRect=[Math.min(selStartPt.x,q.x),Math.min(selStartPt.y,q.y),Math.max(selStartPt.x,q.x),Math.max(selStartPt.y,q.y)]; drawOverlay(); }
 });
 function endPtr(e){ pts.delete(e.pointerId); cancelLongPress();
-  if(gest==="pinch"){ if(pts.size<2){ gest=null;panOrigin=null; } return; }
+  if(gest==="pinch"){ if(pts.size<2){ gest=null;panOrigin=null; if(viewDirty())renderAll(); } return; }
+  if(gest==="pan"&&viewDirty())renderAll();
   if(gest==="pan"&&!moved&&panOrigin&&!longPressFired)tapCell(panOrigin.k);
+  if(gest==="cut"){ const d=cutDrag; cutDrag=null;
+    if(d&&(d.a.x!==d.b.x||d.a.y!==d.b.y)){
+      const cut={id:"k"+Math.random().toString(36).slice(2,8),ax:d.a.x,ay:d.a.y,bx:d.b.x,by:d.b.y,wall:true,side:1,depth:0};
+      cutsList().push(cut); afterCutChange(); openCutSheet(cut); }
+    else { const hit=d?cutNear(d.start.x,d.start.y):null; drawOverlay(); if(hit)openCutSheet(hit); }
+    gest=null; return; }
   if(gest==="select"){
     if(!moved){ tapCell(selStart); }
-    else if(selRect){ const [r0,c0,r1,c1]=selRect; for(let r=r0;r<=r1;r++)for(let c=c0;c<=c1;c++) addSelOrShop(r+"_"+c); afterSel(); }
+    else if(selRect){ selectInRect(selRect); afterSel(); }
     selRect=null; drawOverlay();
   }
   gest=null; selStart=null; panLast=null;panOrigin=null;
@@ -602,77 +730,106 @@ function tapCell(k){
 function addSelOrShop(k,toggle){
   if(activeShop){ const cur=state.cells[k]||{}; const sh=shopById(activeShop);
     if(cur.shop===activeShop){ delete cur.shop; if(!cur.cat)delete cur.cat; }
-    else { if(cur.plan==="zw")delete cur.plan;cur.shop=activeShop; cur.cat=sh.cat; }
+    else { cur.shop=activeShop; cur.cat=sh.cat; }
     if(cur.plan||cur.cat||cur.shop) state.cells[k]=cur; else delete state.cells[k];
     save();
   } else {
     if(toggle && selection.has(k)) selection.delete(k); else selection.add(k);
   }
 }
+function selectInRect(rc){ const x0=rc[0],y0=rc[1],x1=rc[2],y1=rc[3];
+  const c0=clamp(Math.floor(x0/CW),0,GRID_W-1), c1=clamp(Math.floor(x1/CW),0,GRID_W-1);
+  const r0=clamp(Math.floor(y0/CH),0,GRID_H-1), r1=clamp(Math.floor(y1/CH),0,GRID_H-1);
+  for(let r=r0;r<=r1;r++)for(let c=c0;c<=c1;c++){ const k=r+"_"+c; if(!cellCovered(k))addSelOrShop(k); }
+  if(state.view==="actual")cutsList().forEach(cut=>{ if(!cut.depth)return; const g=cutGeom(cut);
+    for(let i=0;i<g.k;i++)for(let j=g.jMin;j<=g.jMax;j++){ const q=bandQuad(g,i,j), cx=(q[0][0]+q[2][0])/2, cy=(q[0][1]+q[2][1])/2;
+      if(cx>=x0&&cx<=x1&&cy>=y0&&cy<=y1)addSelOrShop(bandKey(cut.id,i,j)); } }); }
 function afterSel(){ if(activeShop){ recompute(); drawBase(); drawOverlay(); renderList(); } else { updateSelBar(); drawOverlay(); } }
 
 /* ---- drawing ---- */
-function drawBase(){ bctx.clearRect(0,0,imgW,imgH); bctx.fillStyle="#f5f7f7"; bctx.fillRect(0,0,imgW,imgH);
+function drawBase(){ if(viewDirty()){renderAll();return;} drawBaseLayer(); }
+function drawOverlay(){ if(viewDirty()){renderAll();return;} drawOverlayLayer(); }
+function drawBaseLayer(){ beginView(bctx,base); bctx.fillStyle="#f5f7f7"; bctx.fillRect(0,0,imgW,imgH);
   const op=state.view==="plan"?0.95:0.30;
   for(const k in state.cells){ const d=state.cells[k]; if(!d.plan)continue; const z=zoneById(d.plan); if(!z)continue;
     const [r,c]=keyRC(k);
-    if(d.plan==="zw")fillCell(bctx,r,c,d,z.color);
-    else{bctx.fillStyle=hexA(z.color,op);bctx.fillRect(c*CW,r*CH,CW+0.6,CH+0.6);} } }
+    bctx.fillStyle=hexA(z.color,op);bctx.fillRect(c*CW,r*CH,CW+0.6,CH+0.6); } }
 
-function drawWalls(ctx){ const color=zoneById("zw")?.color||"#3B3838";
-  for(const k in state.cells){ const d=state.cells[k]; if(d.plan!=="zw")continue; const [r,c]=keyRC(k); fillCell(ctx,r,c,d,color); } }
-
-function drawOverlay(){
-  octx.clearRect(0,0,imgW,imgH); const a=state.fillA/100;
-  if(state.view==="actual"){
-    for(const k in state.cells){ const d=state.cells[k]; if(!d.cat)continue; const c=catById(d.cat); if(!c)continue;
-      const [r,cc]=keyRC(k); fillCell(octx,r,cc,d,hexA(c.color,a)); }
-    drawWalls(octx);
-    drawShopBorders(octx); drawLabels(octx);
+function drawOverlayLayer(){
+  beginView(octx,overlay); const a=state.fillA/100, actual=state.view==="actual";
+  if(actual){
+    for(const k in state.cells){ const d=state.cells[k]; if(!d.cat||isBandKey(k)||cellCovered(k))continue;
+      const c=catById(d.cat); if(!c)continue; const rc=keyRC(k); fillCell(octx,rc[0],rc[1],d,hexA(c.color,a)); }
   }
   if(state.showGrid){ octx.lineWidth=Math.max(0.4,CW*0.04); octx.strokeStyle="rgba(20,50,55,.13)"; octx.beginPath();
     for(let c=0;c<=GRID_W;c++){octx.moveTo(c*CW,0);octx.lineTo(c*CW,imgH);} for(let r=0;r<=GRID_H;r++){octx.moveTo(0,r*CH);octx.lineTo(imgW,r*CH);} octx.stroke(); }
-  // selection
-  if(selection.size){ octx.fillStyle=hexA("#e2603f",.35); octx.strokeStyle="#b5401f"; octx.lineWidth=CW*0.12;
-    selection.forEach(k=>{const [r,c]=keyRC(k); octx.fillRect(c*CW,r*CH,CW,CH);}); }
-  if(selRect){ const [r0,c0,r1,c1]=selRect; octx.strokeStyle="#b5401f"; octx.lineWidth=CW*0.14;
-    octx.strokeRect(c0*CW,r0*CH,(c1-c0+1)*CW,(r1-r0+1)*CH); octx.fillStyle=hexA("#e2603f",.2); octx.fillRect(c0*CW,r0*CH,(c1-c0+1)*CW,(r1-r0+1)*CH); }
-  // active or inspected shop glow
+  if(actual){
+    forEachBandCell((k,d,q)=>{ if(!d.cat)return; const c=catById(d.cat); if(c)fillQuad(octx,q,hexA(c.color,a)); });
+    drawBandGrid(octx);
+    drawShopBorders(octx); drawLabels(octx);
+  }
+  drawCutLines(octx,mode==="cut");
+  if(selection.size){ octx.strokeStyle="#b5401f"; octx.lineWidth=CW*0.12;
+    selection.forEach(k=>{ const q=keyQuad(k); if(q)fillQuad(octx,q,hexA("#e2603f",.35)); }); }
+  if(selRect){ const x0=selRect[0],y0=selRect[1],x1=selRect[2],y1=selRect[3];
+    octx.strokeStyle="#b5401f"; octx.lineWidth=CW*0.14; octx.strokeRect(x0,y0,x1-x0,y1-y0);
+    octx.fillStyle=hexA("#e2603f",.2); octx.fillRect(x0,y0,x1-x0,y1-y0); }
   const highlightedShop=activeShop||inspectedShop;
   if(highlightedShop){ octx.strokeStyle="#e2603f"; octx.lineWidth=CW*0.22; octx.setLineDash([CW*0.6,CW*0.4]);
-    for(const k in state.cells){ const d=state.cells[k]; if(d.shop===highlightedShop&&!cellHidden(d)){ const [r,c]=keyRC(k); octx.strokeRect(c*CW+1,r*CH+1,CW-2,CH-2);} } octx.setLineDash([]); }
+    for(const k in state.cells){ const d=state.cells[k]; if(d.shop!==highlightedShop)continue; const q=keyQuad(k); if(!q)continue;
+      octx.beginPath(); q.forEach((pt,i)=>i?octx.lineTo(pt[0],pt[1]):octx.moveTo(pt[0],pt[1])); octx.closePath(); octx.stroke(); }
+    octx.setLineDash([]); }
+  if(cutDrag){ const p=cutDrag.a,q=cutDrag.b;
+    octx.save(); octx.lineCap="round"; octx.lineWidth=Math.max(1.4,CW*0.3); octx.strokeStyle="rgba(214,79,39,.95)";
+    octx.beginPath(); octx.moveTo(p.x*CW,p.y*CH); octx.lineTo(q.x*CW,q.y*CH); octx.stroke();
+    octx.fillStyle="#d64f27"; [p,q].forEach(pt=>{octx.beginPath();octx.arc(pt.x*CW,pt.y*CH,Math.max(1.6,CW*0.38),0,7);octx.fill();});
+    octx.restore(); }
 }
 function drawShopBorders(ctx){ ctx.strokeStyle="rgba(20,45,50,.55)"; ctx.lineWidth=Math.max(0.8,CW*0.12); ctx.lineCap="round";
   for(const k in state.cells){ const d=state.cells[k]; if(!d.shop)continue;
-    shopBorderSegments(k,d).forEach(g=>{ctx.beginPath();ctx.moveTo(g[0],g[1]);ctx.lineTo(g[2],g[3]);ctx.stroke();}); } ctx.lineCap="butt"; }
-function shopAnchor(id){ let best=null; for(const k in state.cells){ if(state.cells[k].shop===id&&!cellHidden(state.cells[k])){ const [r,c]=keyRC(k);
-    if(!best||r<best[0]||(r===best[0]&&c<best[1])) best=[r,c]; } } return best; }
+    allBorderSegments(k,d).forEach(g=>{ctx.beginPath();ctx.moveTo(g[0],g[1]);ctx.lineTo(g[2],g[3]);ctx.stroke();}); } ctx.lineCap="butt"; }
+function allBorderSegments(k,d){
+  if(isBandKey(k)){ const q=keyQuad(k); if(!q)return []; const nb=cellNeighbors(k), out=[];
+    for(let e=0;e<4;e++){ const nd=state.cells[nb[e]]; if(nd&&nd.shop===d.shop&&cellVisible(nb[e],nd))continue;
+      const p1=q[e],p2=q[(e+1)%4]; out.push([p1[0],p1[1],p2[0],p2[1]]); }
+    return out; }
+  if(cellCovered(k))return [];
+  return shopBorderSegments(k,d); }
+function shopAnchor(id){ let best=null; for(const k in state.cells){ const d=state.cells[k];
+    if(d.shop!==id||!cellVisible(k,d))continue; const ctr=keyCenter(k); if(!ctr)continue;
+    const r=ctr[1]/CH-0.5, c=ctr[0]/CW-0.5;
+    if(!best||r<best[0]||(r===best[0]&&c<best[1])) best=[r,c]; } return best; }
 function shopComponents(id){
-  const pending=new Set(); for(const k in state.cells)if(state.cells[k].shop===id&&!cellHidden(state.cells[k]))pending.add(k);
+  const pending=new Set(); for(const k in state.cells)if(state.cells[k].shop===id&&cellVisible(k,state.cells[k]))pending.add(k);
   const out=[];
   while(pending.size){ const first=pending.values().next().value, q=[first], cells=[]; pending.delete(first);
-    while(q.length){ const k=q.pop(),[r,c]=keyRC(k); cells.push([r,c]);
-      [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([nr,nc])=>{const nk=nr+"_"+nc;if(pending.delete(nk))q.push(nk);}); }
+    while(q.length){ const k=q.pop(); cells.push(k);
+      cellNeighbors(k).forEach(nk=>{ if(pending.delete(nk))q.push(nk); }); }
     out.push(cells);
   }
   return out;
 }
-function componentAnchor(cells){
-  const center=cells.reduce((a,p)=>[a[0]+p[0],a[1]+p[1]],[0,0]).map(v=>v/cells.length);
-  return cells.reduce((best,p)=>{const d=(p[0]-center[0])**2+(p[1]-center[1])**2;return !best||d<best.d?{p,d}:best;},null).p;
+function componentAnchor(keys){
+  const pts=keys.map(k=>keyCenter(k)).filter(Boolean); if(!pts.length)return null;
+  const cx=pts.reduce((a,p)=>a+p[0],0)/pts.length, cy=pts.reduce((a,p)=>a+p[1],0)/pts.length;
+  return pts.reduce((best,p)=>{const d=(p[0]-cx)**2+(p[1]-cy)**2;return !best||d<best.d?{p,d}:best;},null).p;
 }
-function shopLabelAnchors(id){return shopComponents(id).map(componentAnchor);}
-function shopCentroid(id){ let sr=0,sc=0,n=0; for(const k in state.cells){ if(state.cells[k].shop===id){ const [r,c]=keyRC(k); sr+=r;sc+=c;n++; } }
+function shopLabelAnchors(id){return shopComponents(id).map(componentAnchor).filter(Boolean);}
+function shopCentroid(id){ let sr=0,sc=0,n=0; for(const k in state.cells){ const d=state.cells[k];
+    if(d.shop!==id||!cellVisible(k,d))continue; const ctr=keyCenter(k); if(!ctr)continue; sr+=ctr[1]/CH-0.5; sc+=ctr[0]/CW-0.5; n++; }
   return n?[sr/n,sc/n,n]:null; }
 function shopSortMetrics(id){let firstOpenX=Infinity,minY=Infinity,minX=Infinity,sumX=0,sumY=0,n=0;
-  for(const k in state.cells){if(state.cells[k].shop!==id||cellHidden(state.cells[k]))continue;const [y,x]=keyRC(k);let left=x-1;
-    while(left>=0&&(state.cells[y+"_"+left]||{}).shop)left--;
+  for(const k in state.cells){const dd=state.cells[k]; if(dd.shop!==id||!cellVisible(k,dd))continue;
+    let y,x,left;
+    if(isBandKey(k)){const ctr=keyCenter(k);if(!ctr)continue;x=ctr[0]/CW-0.5;y=ctr[1]/CH-0.5;left=Math.floor(x)-1;}
+    else{const rc=keyRC(k);y=rc[0];x=rc[1];left=x-1;
+      while(left>=0&&(state.cells[y+"_"+left]||{}).shop)left--;}
     firstOpenX=Math.min(firstOpenX,left);minY=Math.min(minY,y);minX=Math.min(minX,x);sumX+=x;sumY+=y;n++;}
   return n?{firstOpenX,minY,minX,averageScore:sumX/n+1.01*(sumY/n)}:null;}
 function drawLabels(ctx){
   if(!state.showLabels && !state.showNames) return;
   state.shops.forEach(sh=>{ const num=numbers[sh.id];
-    shopLabelAnchors(sh.id).forEach(anchor=>{ const cx=(anchor[1]+0.5)*CW, cy=(anchor[0]+0.5)*CH;
+    shopLabelAnchors(sh.id).forEach(anchor=>{ const cx=anchor[0], cy=anchor[1];
       if(state.showLabels && num){ const rr=CH*0.7; ctx.fillStyle="#0e3b43"; ctx.beginPath(); ctx.arc(cx,cy,rr,0,7); ctx.fill();
         ctx.fillStyle="#fff"; ctx.font="700 "+(CH*0.85)+"px 'Noto Sans TC',sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(num,cx,cy+CH*0.03); }
       if(state.showNames){ ctx.fillStyle="#10312f"; ctx.font="600 "+(CH*0.75)+"px 'Noto Sans TC',sans-serif"; ctx.textAlign="center"; ctx.textBaseline="top";
@@ -689,47 +846,43 @@ function recompute(){
 }
 
 /* ---- selection bar ---- */
-function updateSelBar(){ const n=selection.size; $("#moveSelN").textContent=n;$("#selMove").disabled=!n; const on=n>0&&!activeShop; $("#selbar").classList.toggle("on",on); document.body.classList.toggle("selbar-on",on); }
+function updateSelBar(){ const n=selection.size; $("#moveSelN").textContent=n;$("#selMove").disabled=!n; const on=n>0&&!activeShop; $("#selbar").classList.toggle("on",on); document.body.classList.toggle("selbar-on",on||!!editingCut); }
 $("#selClr").onclick=()=>{ selection.clear(); updateSelBar(); drawOverlay(); };
 $("#selErase").onclick=()=>{ const total=selection.size; let changed=0,walls=0;
-  selection.forEach(k=>{ const cur=state.cells[k]; if(!cur)return; if(cur.cat||cur.shop||cur.plan==="zw")changed++;if(cur.plan==="zw")walls++;delete cur.cat; delete cur.shop; delete cur.poly;if(cur.plan==="zw")delete cur.plan;
+  selection.forEach(k=>{ const cur=state.cells[k]; if(!cur)return; if(cur.cat||cur.shop)changed++;delete cur.cat; delete cur.shop; delete cur.poly; delete cur.wpoly;
     if(!cur.plan)delete state.cells[k]; });
   selection.clear(); pruneUnusedUnnamedShops(); recompute(); save(); updateSelBar(); drawBase(); drawOverlay(); renderList();
   toast(changed?(walls?`已清除 ${changed} 格標記，其中 ${walls} 格牆壁連同底圖移除`:`已清除 ${changed} 格實際標記（其他規劃底圖保留）`):`所選 ${total} 格沒有可清除的標記`); };
 $("#selAssign").onclick=openAssign;
-/* ---- diagonal corner ---- */
-const DIAG_NAMES=["左上","右上","右下","左下"];
-let diagState={key:"",idx:-1};
-function selectionRect(){ if(!selection.size)return null; let r0=1e9,c0=1e9,r1=-1,c1=-1;
-  selection.forEach(k=>{const [r,c]=keyRC(k);r0=Math.min(r0,r);c0=Math.min(c0,c);r1=Math.max(r1,r);c1=Math.max(c1,c);});
-  const w=c1-c0+1,h=r1-r0+1; if(selection.size!==w*h)return null; return {r0,c0,r1,c1,w,h}; }
-function applyDiagonal(){
-  const rect=selectionRect();
-  if(!rect){ toast("斜角只能用在完整的矩形選取範圍"); return; }
-  const key=`${rect.r0}_${rect.c0}_${rect.r1}_${rect.c1}`;
-  if(diagState.key!==key)diagState={key,idx:-1};
-  diagState.idx=(diagState.idx+1)%5;
-  const corner=diagState.idx;
-  let touched=0;
-  for(let r=rect.r0;r<=rect.r1;r++)for(let c=rect.c0;c<=rect.c1;c++){
-    const d=state.cells[r+"_"+c]; if(!d)continue; if(!d.cat&&!d.shop&&d.plan!=="zw"){delete d.poly;continue;} touched++;
-    if(corner===4){ delete d.poly; continue; }
-    const poly=clipCellByCorner(c-rect.c0,r-rect.r0,rect.w,rect.h,corner),area=polyArea(poly);
-    if(area<=0.004)d.poly=[];
-    else if(area>=0.996)delete d.poly;
-    else d.poly=poly.map(pt=>[+pt[0].toFixed(4),+pt[1].toFixed(4)]);
-  }
-  if(!touched){ toast("所選範圍沒有可斜切的標記"); return; }
-  recompute(); save(); drawBase(); drawOverlay(); renderList();
-  if(navigator.vibrate)navigator.vibrate(10);
-  toast(corner===4?"已恢復方形":"斜角：直角在"+DIAG_NAMES[corner]);
-}
-$("#selDiag").onclick=applyDiagonal;
+const CUT_SIDES=[{v:-1,label:"上側"},{v:1,label:"下側"},{v:0,label:"雙側"}];
+function syncCutBar(){ const on=!!editingCut; $("#cutbar").classList.toggle("on",on);
+  document.body.classList.toggle("selbar-on",on||$("#selbar").classList.contains("on"));
+  if(!on)return; const cut=editingCut;
+  $("#cutStyle").textContent=cut.wall?"實線":"透明"; $("#cutStyle").classList.toggle("solid",!!cut.wall);
+  $("#cutSide").textContent=(CUT_SIDES.find(x=>x.v===(cut.side|0))||CUT_SIDES[1]).label;
+  $("#cutSide").disabled=!cut.depth;
+  $("#cutDepthVal").textContent="深度 "+(cut.depth||0);
+  $("#cutDepthDown").disabled=!cut.depth; $("#cutDepthUp").disabled=(cut.depth|0)>=8; }
+function openCutSheet(cut){ editingCut=cut; syncCutBar(); drawOverlay(); }
+function closeCutBar(){ editingCut=null; syncCutBar(); drawOverlay(); }
+$("#cutStyle").onclick=()=>{ if(!editingCut)return; editingCut.wall=!editingCut.wall; syncCutBar(); afterCutChange(); };
+$("#cutSide").onclick=()=>{ if(!editingCut||!editingCut.depth)return;
+  const i=CUT_SIDES.findIndex(x=>x.v===(editingCut.side|0));
+  editingCut.side=CUT_SIDES[(i<0?1:i+1)%CUT_SIDES.length].v; syncCutBar(); afterCutChange(); };
+function stepCutDepth(delta){ if(!editingCut)return;
+  const next=clamp((editingCut.depth|0)+delta,0,8); if(next===(editingCut.depth|0))return;
+  editingCut.depth=next; if(next&&editingCut.side===undefined)editingCut.side=1; syncCutBar(); afterCutChange(); }
+$("#cutDepthDown").onclick=()=>stepCutDepth(-1);
+$("#cutDepthUp").onclick=()=>stepCutDepth(1);
+$("#cutDelete").onclick=()=>{ if(!editingCut)return; const i=cutsList().indexOf(editingCut);
+  if(i>=0)cutsList().splice(i,1); editingCut=null; syncCutBar(); afterCutChange(); toast("已刪除切線"); };
+$("#cutOk").onclick=()=>{ closeCutBar(); };
 const MOVE_DELTAS={up:[-1,0],down:[1,0],left:[0,-1],right:[0,1]};
-function moveSelection(dir){const delta=MOVE_DELTAS[dir];if(!delta||!selection.size)return false;const [dr,dc]=delta,keys=[...selection],targets=new Map(),actual=new Map();let hasActual=false;
+function moveSelection(dir){const delta=MOVE_DELTAS[dir];if(!delta||!selection.size)return false;
+  for(const k of selection)if(isBandKey(k)){toast("對齊網格的格子不支援移動");return false;}const [dr,dc]=delta,keys=[...selection],targets=new Map(),actual=new Map();let hasActual=false;
   for(const k of keys){const [r,c]=keyRC(k),nr=r+dr,nc=c+dc;if(nr<0||nr>=GRID_H||nc<0||nc>=GRID_W){toast("已到達網格邊界");return false;}const nk=nr+"_"+nc,d=state.cells[k]||{};targets.set(k,nk);actual.set(k,{cat:d.cat,shop:d.shop,poly:d.poly});if(d.cat||d.shop)hasActual=true;}
   if(!hasActual){toast("所選區域沒有可移動的實際標記（牆壁不能移動）");return false;}
-  for(const k of keys){const d=actual.get(k),dest=state.cells[targets.get(k)];if((d.cat||d.shop)&&dest?.plan==="zw"){toast("牆壁不能被覆蓋或移動");return false;}}
+
   const next={};for(const k in state.cells)next[k]={...state.cells[k]};
   keys.forEach(k=>{const d=next[k];if(!d)return;delete d.cat;delete d.shop;delete d.poly;if(!d.plan)delete next[k];});
   keys.forEach(k=>{const nk=targets.get(k),d=next[nk];if(!d)return;delete d.cat;delete d.shop;delete d.poly;if(!d.plan)delete next[nk];});
@@ -741,9 +894,10 @@ $("#moveClose").onclick=()=>closeSheet("moveSheet");
 
 /* ---- modes / view ---- */
 function setMode(m){let changed=false;if(m==="view"&&activeShop){activeShop=null;$("#targetbar").classList.remove("on");changed=true;}if(m!=="view"&&inspectedShop){clearShopInspection();changed=true;}
-  if(m==="view"&&(selection.size||selRect)){selection.clear();selRect=null;selStart=null;closeSheet("assignSheet");closeSheet("moveSheet");updateSelBar();changed=true;}
+  if(m!=="cut"){ cutDrag=null; if(editingCut){editingCut=null;syncCutBar();} }
+  if(m!=="assign"&&(selection.size||selRect)){selection.clear();selRect=null;selStart=null;closeSheet("assignSheet");closeSheet("moveSheet");updateSelBar();changed=true;}
   mode=m;$("#modeSeg").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
-  $("#mapHint").textContent=m==="assign"?"點按多選・拖曳框選・雙指移動縮放":"單指移動・點店家查看・長按編輯格子";if(changed){drawOverlay();renderList();} }
+  $("#mapHint").textContent=m==="assign"?"點按多選・拖曳框選・雙指移動縮放":m==="cut"?"沿格線交點拉出切線・點線可編輯":"單指移動・點店家查看・長按編輯格子";if(changed){drawOverlay();renderList();} }
 $("#modeSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>setMode(b.dataset.m));
 function renderLegend(){ const items=state.view==="plan"?state.zones:state.cats,host=$("#legendGrid"); host.innerHTML="";
   $("#legendLayer").textContent=state.view==="plan"?"規劃":"實際";
@@ -762,7 +916,7 @@ function fillCatSelect(sel,val){ sel.innerHTML=""; state.cats.forEach(c=>{ const
 function refreshShopDatalist(){ const dl=$("#shopNames"); dl.innerHTML=""; state.shops.forEach(sh=>{const o=document.createElement("option");o.value=sh.name;dl.appendChild(o);}); }
 function refreshExistingSelect(val=""){ const sel=$("#asgExisting"); sel.innerHTML='<option value="">選擇既有店家…</option>';
   [...state.shops].sort((a,b)=>a.name.localeCompare(b.name,"zh-Hant")).forEach(sh=>{const o=document.createElement("option");o.value=sh.id;o.textContent=sh.name;sel.appendChild(o);}); sel.value=val; }
-function syncAssignWallMode(){const wall=$("#asgCat").value==="c10";$("#asgStoreFields").hidden=wall;[$("#asgShop"),$("#asgExisting"),$("#asgDitto")].forEach(el=>el.disabled=wall);if(wall){$("#asgShop").value="";$("#asgExisting").value="";}$("#assignTitle").textContent=wall?"新增牆壁":"指定分類與店家";}
+function syncAssignWallMode(){$("#asgStoreFields").hidden=false;[$("#asgShop"),$("#asgExisting"),$("#asgDitto")].forEach(el=>el.disabled=false);$("#assignTitle").textContent="指定分類與店家";}
 function selectionMarks(){ const map=new Map();
   selection.forEach(k=>{ const d=state.cells[k]; if(!d||cellHidden(d))return;
     if(d.shop&&shopById(d.shop)){ const e=map.get("s:"+d.shop)||{type:"shop",id:d.shop,n:0}; e.n++; map.set("s:"+d.shop,e); }
@@ -792,19 +946,22 @@ $("#asgShop").oninput=()=>{ const sh=state.shops.find(x=>x.name===$("#asgShop").
 $("#asgCancel").onclick=()=>closeSheet("assignSheet");
 $("#asgApply").onclick=()=>{
   const catId=$("#asgCat").value,typedName=$("#asgShop").value.trim(),name=typedName||nextUnnamedName(catId);
-  if(catId==="c10"){selection.forEach(k=>{const cur=state.cells[k]||{};cur.plan="zw";delete cur.cat;delete cur.shop;state.cells[k]=cur;});selection.clear();pruneOrphanedShops();recompute();save();closeSheet("assignSheet");updateSelBar();drawBase();drawOverlay();renderList();toast("已新增牆壁");return;}
+  if(false){selection.forEach(k=>{const cur=state.cells[k]||{};delete cur.cat;delete cur.shop;state.cells[k]=cur;});selection.clear();pruneOrphanedShops();recompute();save();closeSheet("assignSheet");updateSelBar();drawBase();drawOverlay();renderList();toast("已新增牆壁");return;}
   let sh=typedName?(shopById($("#asgExisting").value)||state.shops.find(x=>x.name===name)):null;
   if(!sh){ sh={id:uid("s"),name,cat:catId}; state.shops.push(sh);}
   else { sh.name=name; sh.cat=catId; for(const k in state.cells)if(state.cells[k].shop===sh.id)state.cells[k].cat=catId; }
   const shopId=sh.id; lastShopName=name; state.lastShopId=sh.id;
-  selection.forEach(k=>{ const cur=state.cells[k]||{};if(cur.plan==="zw")delete cur.plan;if(cellHidden(cur))delete cur.poly;cur.cat=catId; if(shopId)cur.shop=shopId; else delete cur.shop;
+  selection.forEach(k=>{ const cur=state.cells[k]||{};if(cellHidden(cur))delete cur.poly;cur.cat=catId; if(shopId)cur.shop=shopId; else delete cur.shop;
     if(cur.plan||cur.cat||cur.shop)state.cells[k]=cur; else delete state.cells[k]; });
   selection.clear(); pruneUnusedUnnamedShops(); recompute(); save(); closeSheet("assignSheet"); updateSelBar(); drawBase(); drawOverlay(); renderList();
 };
 
 /* ---- cell detail ---- */
 let cellKey=null;
-function openCellSheet(k){ cellKey=k; const [r,c]=keyRC(k); $("#cellCo").textContent=`第 ${r+1} 列 · 第 ${c+1} 欄`;
+function openCellSheet(k){ cellKey=k; const band=isBandKey(k);
+  if(band){ const b=parseBandKey(k); $("#cellCo").textContent=`切線網格 · 第 ${b.i+1} 段 · 第 ${b.j+1} 排`; }
+  else { const rc=keyRC(k); $("#cellCo").textContent=`第 ${rc[0]+1} 列 · 第 ${rc[1]+1} 欄`; }
+  $("#cellZone").parentElement.hidden=band;
   const d=state.cells[k]||{}; pickChips($("#cellZone"),state.zones,d.plan); pickChips($("#cellCat"),state.cats,d.cat);
   $("#cellShop").value=d.shop?(shopById(d.shop)?.name||""):""; refreshShopDatalist(); openSheet("cellSheet"); }
 function pickChips(host,list,sel){ host.innerHTML=""; if(!list.length){host.innerHTML='<span style="font-size:13px;color:var(--muted)">—</span>';host.dataset.sel="";return;}
@@ -815,8 +972,7 @@ $("#cellCancel").onclick=()=>closeSheet("cellSheet");
 $("#cellClear").onclick=()=>{ if(cellKey){delete state.cells[cellKey]; pruneUnusedUnnamedShops(); recompute(); save(); closeSheet("cellSheet"); drawBase(); drawOverlay(); renderList();} };
 $("#cellSave").onclick=()=>{ if(!cellKey)return; const cur=state.cells[cellKey]||{};
   const pz=$("#cellZone").dataset.sel||"", cc=$("#cellCat").dataset.sel||"", nm=$("#cellShop").value.trim();
-  if(cc==="c10"||(pz==="zw"&&!cc&&!nm)){cur.plan="zw";delete cur.cat;delete cur.shop;delete cur.poly;state.cells[cellKey]=cur;pruneOrphanedShops();recompute();save();closeSheet("cellSheet");drawBase();drawOverlay();renderList();toast("已設為牆壁");return;}
-  if(pz&&pz!=="zw")cur.plan=pz; else delete cur.plan; if(cc&&cc!=="c10")cur.cat=cc; else delete cur.cat;
+  if(isBandKey(cellKey))delete cur.plan; else if(pz)cur.plan=pz; else delete cur.plan; if(cc)cur.cat=cc; else delete cur.cat;
   if(cc||nm){ let sh=nm?state.shops.find(x=>x.name===nm):null; const catId=cc||sh?.cat||state.cats[0]?.id, name=nm||nextUnnamedName(catId);
     if(!sh){sh={id:uid("s"),name,cat:catId};state.shops.push(sh);}
     if(catId&&sh.cat!==catId){sh.cat=catId;for(const k in state.cells)if(state.cells[k].shop===sh.id)state.cells[k].cat=catId;}
@@ -825,7 +981,7 @@ $("#cellSave").onclick=()=>{ if(!cellKey)return; const cur=state.cells[cellKey]|
   pruneUnusedUnnamedShops(); recompute(); save(); closeSheet("cellSheet"); drawBase(); drawOverlay(); renderList(); };
 
 /* ---- shop list ---- */
-function shopCount(id){ let n=0; for(const k in state.cells){const d=state.cells[k]; if(d.shop===id&&!cellHidden(d))n++;} return n; }
+function shopCount(id){ let n=0; for(const k in state.cells){const d=state.cells[k]; if(d.shop===id&&cellVisible(k,d))n++;} return n; }
 function clearShopInspection(clearSearch=true){inspectedShop=null;if(clearSearch){shopFilter="";const search=$("#shopSearch");if(search)search.value="";}}
 function inspectShopFromMap(id){const sh=shopById(id);if(!sh)return;if(inspectedShop===id){clearShopInspection();drawOverlay();renderList();if(!state.listCollapsed){state.listCollapsed=true;persistState();syncListCollapse(true);}return;}activeShop=null;$("#targetbar").classList.remove("on");selection.clear();updateSelBar();inspectedShop=id;shopFilter="";$("#shopSearch").value=sh.name;if(state.listCollapsed){state.listCollapsed=false;persistState();syncListCollapse(true);}drawOverlay();renderList();}
 function renderList(){
@@ -849,16 +1005,18 @@ function focusShop(id){clearShopInspection();activeShop=id; const sh=shopById(id
   setMode("assign"); setView("actual"); zoomToShop(id); drawOverlay(); renderList(); }
 $("#targetDone").onclick=()=>{ activeShop=null; $("#targetbar").classList.remove("on"); drawOverlay(); renderList(); };
 function zoomToShop(id){ let r0=1e9,c0=1e9,r1=-1,c1=-1,has=false;
-  for(const k in state.cells){ if(state.cells[k].shop===id){ const [r,c]=keyRC(k); has=true; r0=Math.min(r0,r);c0=Math.min(c0,c);r1=Math.max(r1,r);c1=Math.max(c1,c);} }
+  for(const k in state.cells){ const d=state.cells[k]; if(d.shop!==id||!cellVisible(k,d))continue;
+    const ctr=keyCenter(k); if(!ctr)continue; const r=ctr[1]/CH-0.5, c=ctr[0]/CW-0.5;
+    has=true; r0=Math.min(r0,r);c0=Math.min(c0,c);r1=Math.max(r1,r);c1=Math.max(c1,c); }
   if(!has)return; const wrapEl=$("#stagewrap"); const W=wrapEl.clientWidth,H=wrapEl.clientHeight;
   const bw=(c1-c0+1)*CW/imgW*baseW, bh=(r1-r0+1)*CH/imgH*baseH;
   const ns=clamp(Math.min((W-80)/(bw*1.5), (H-80)/(bh*1.5)),1.15,12); s=ns;
   const cxContent=((c0+c1)/2+0.5)*CW/imgW*baseW, cyContent=((r0+r1)/2+0.5)*CH/imgH*baseH;
-  tx=W/2 - cxContent*s; ty=H/2 - cyContent*s; clampT(); applyT(); }
+  tx=W/2 - cxContent*s; ty=H/2 - cyContent*s; clampT(); applyT(); renderAll(); }
 
 $("#shopSearch").oninput=e=>{inspectedShop=null;shopFilter=e.target.value;drawOverlay();renderList();};
 function syncListCollapse(preserveViewport=false){ $("#listWrap").classList.toggle("collapsed",!!state.listCollapsed); $("#listFab").classList.toggle("hidden",!state.listCollapsed);$("#listFab").setAttribute("aria-expanded",String(!state.listCollapsed)); $("#btnListToggle").textContent="收合";
-  $("#btnListToggle").setAttribute("aria-expanded",String(!state.listCollapsed));requestAnimationFrame(()=>{if(preserveViewport){fitBase();clampT();applyT();}else{fit();if(activeShop)zoomToShop(activeShop);}}); }
+  $("#btnListToggle").setAttribute("aria-expanded",String(!state.listCollapsed));requestAnimationFrame(()=>{if(preserveViewport){fitBase();clampT();applyT();renderAll();}else{fit();if(activeShop)zoomToShop(activeShop);}}); }
 $("#btnListToggle").onclick=()=>{state.listCollapsed=!state.listCollapsed;persistState();syncListCollapse(true);};
 $("#listFab").onclick=()=>{state.listCollapsed=false;persistState();syncListCollapse(true);};
 
@@ -884,39 +1042,50 @@ function modalArr(){return modalTarget==="zones"?state.zones:state.cats;}
 function refreshAfterCategoryChange(){recompute();save();drawBase();drawOverlay();renderList();renderLegend();}
 function nextCategoryName(){let n=1;while(state.cats.some(c=>c.name==="新增分類 "+n))n++;return "新增分類 "+n;}
 function nextCategoryColor(){const palette=["#E67E22","#43A047","#039BE5","#F6BF26","#EC407A","#7E57C2","#8D6E63","#26A69A","#78909C"];return palette.find(color=>!state.cats.some(c=>c.color.toUpperCase()===color))||palette[(state.cats.length-1)%palette.length];}
-function editableCategories(){return state.cats.filter(c=>c.id!=="c10");}
+function editableCategories(){return state.cats.slice();}
 function renderMergeOptions(){const cats=editableCategories(),from=$("#mergeFrom"),to=$("#mergeTo"),keepFrom=from.value;from.innerHTML="";cats.forEach(c=>{const o=document.createElement("option");o.value=c.id;o.textContent=c.name;from.appendChild(o);});if(cats.some(c=>c.id===keepFrom))from.value=keepFrom;const source=from.value,keepTo=to.value;to.innerHTML="";cats.filter(c=>c.id!==source).forEach(c=>{const o=document.createElement("option");o.value=c.id;o.textContent=c.name;to.appendChild(o);});if([...to.options].some(o=>o.value===keepTo))to.value=keepTo;$("#mergeApply").disabled=!source||!to.value;}
+const PLAN_PAIR={c10:"zw"};
+function planCellCount(zoneId){let n=0;if(!zoneId)return 0;for(const k in state.cells)if(state.cells[k].plan===zoneId)n++;return n;}
 function deleteActualCategory(cat){const shopIds=new Set(state.shops.filter(sh=>sh.cat===cat.id).map(sh=>sh.id));
-  for(const k in state.cells){const d=state.cells[k];if(shopIds.has(d.shop)){delete d.shop;delete d.cat;}else if(d.cat===cat.id)delete d.cat;if(!d.plan&&!d.cat&&!d.shop)delete state.cells[k];}
+  const zoneId=PLAN_PAIR[cat.id]||null;
+  for(const k in state.cells){const d=state.cells[k];if(shopIds.has(d.shop)){delete d.shop;delete d.cat;}else if(d.cat===cat.id)delete d.cat;
+    if(zoneId&&d.plan===zoneId)delete d.plan;
+    if(!d.plan&&!d.cat&&!d.shop)delete state.cells[k];}
+  if(zoneId)state.zones=state.zones.filter(z=>z.id!==zoneId);
   state.shops=state.shops.filter(sh=>!shopIds.has(sh.id));if(shopIds.has(state.lastShopId)){state.lastShopId="";lastShopName="";}if(shopIds.has(activeShop)){activeShop=null;$("#targetbar").classList.remove("on");}if(shopIds.has(inspectedShop))clearShopInspection();
   state.cats=state.cats.filter(c=>c.id!==cat.id);refreshAfterCategoryChange();renderCatList();}
-function mergeActualCategory(fromId,toId){if(!fromId||!toId||fromId===toId||fromId==="c10"||toId==="c10")return;state.shops.forEach(sh=>{if(sh.cat===fromId)sh.cat=toId;});for(const k in state.cells)if(state.cells[k].cat===fromId)state.cells[k].cat=toId;state.cats=state.cats.filter(c=>c.id!==fromId);refreshAfterCategoryChange();renderCatList();$("#mergeBox").classList.add("hidden");toast("分類已合併");}
+function mergeActualCategory(fromId,toId){if(!fromId||!toId||fromId===toId)return;state.shops.forEach(sh=>{if(sh.cat===fromId)sh.cat=toId;});for(const k in state.cells)if(state.cells[k].cat===fromId)state.cells[k].cat=toId;state.cats=state.cats.filter(c=>c.id!==fromId);refreshAfterCategoryChange();renderCatList();$("#mergeBox").classList.add("hidden");toast("分類已合併");}
 function renderCatList(focusId=""){ const list=$("#catList"); list.innerHTML=""; modalArr().forEach((cat,i)=>{ const row=document.createElement("div"); row.className="catrow";row.dataset.id=cat.id;
-  const wall=cat.id==="zw"||cat.id==="c10";
+  const wall=false;
   row.innerHTML=`<input type="color" value="${cat.color}"${wall?' disabled title="牆壁顏色固定為黑灰色"':''}><input type="text" value="${esc(cat.name)}" maxlength="16">`+(modalTarget==="zones"?"":`<button class="del" aria-label="刪除 ${esc(cat.name)}"${wall?' disabled title="牆壁為固定分類"':''}>✕</button>`);
   row.children[0].oninput=e=>cat.color=e.target.value; row.children[1].oninput=e=>cat.name=e.target.value;
-  if(modalTarget!=="zones"&&!wall) row.children[2].onclick=()=>{const count=state.shops.filter(sh=>sh.cat===cat.id).length;if(!confirm(`刪除「${cat.name}」？${count?`\n這會同時刪除 ${count} 個店家 item，並清空其上色與標記。`:"\n使用此分類的上色與標記會一併清空。"}`))return;deleteActualCategory(cat);};
+  if(modalTarget!=="zones"&&!wall) row.children[2].onclick=()=>{const count=state.shops.filter(sh=>sh.cat===cat.id).length;
+    const planN=planCellCount(PLAN_PAIR[cat.id]);
+    if(!confirm(`刪除「${cat.name}」？${count?`\n這會同時刪除 ${count} 個店家 item，並清空其上色與標記。`:"\n使用此分類的上色與標記會一併清空。"}${planN?`\n規劃底圖的 ${planN} 格也會一併清除。`:""}`))return;deleteActualCategory(cat);};
   list.appendChild(row); });if(modalTarget!=="zones"){const canMerge=editableCategories().length>=2;$("#openMerge").disabled=!canMerge;if(!canMerge)$("#mergeBox").classList.add("hidden");else if(!$("#mergeBox").classList.contains("hidden"))renderMergeOptions();}if(focusId){const input=list.querySelector(`[data-id="${focusId}"] input[type="text"]`);if(input){input.focus();input.select();}} }
 $("#addCat").onclick=()=>{const cat={id:uid("c"),name:nextCategoryName(),color:nextCategoryColor()},wallIndex=state.cats.findIndex(c=>c.id==="c10");if(wallIndex<0)state.cats.push(cat);else state.cats.splice(wallIndex,0,cat);refreshAfterCategoryChange();renderCatList(cat.id);};
 $("#openMerge").onclick=()=>{if(editableCategories().length<2){toast("至少需要兩個分類才能合併");return;}$("#mergeBox").classList.toggle("hidden");if(!$("#mergeBox").classList.contains("hidden"))renderMergeOptions();};
 $("#mergeFrom").onchange=renderMergeOptions;
 $("#mergeApply").onclick=()=>{const from=catById($("#mergeFrom").value),to=catById($("#mergeTo").value);if(!from||!to)return;if(!confirm(`將「${from.name}」併入「${to.name}」？\n店家與已標記格子都會保留並改用「${to.name}」。`))return;mergeActualCategory(from.id,to.id);};
-$("#catDone").onclick=()=>{ if(modalTarget!=="zones")state.cats.forEach(c=>{if(c.id!=="c10"&&!c.name.trim())c.name=nextCategoryName();}); $("#catModal").classList.remove("open"); refreshAfterCategoryChange(); };
+$("#catDone").onclick=()=>{ if(modalTarget!=="zones")state.cats.forEach(c=>{if(!c.name.trim())c.name=nextCategoryName();}); $("#catModal").classList.remove("open"); refreshAfterCategoryChange(); };
 $("#catModal").onclick=e=>{ if(e.target.id==="catModal")$("#catDone").click(); };
 
 /* ---- sheets plumbing ---- */
 function openSheet(id){ closeAllSheets(); $("#"+id).classList.add("open"); $("#backdrop").classList.add("on"); }
 function closeSheet(id){ $("#"+id).classList.remove("open"); $("#backdrop").classList.remove("on"); }
 function closeAllSheets(){ document.querySelectorAll(".sheet").forEach(s=>s.classList.remove("open")); }
-function shiftGridContent(dr,dc){if(!dr&&!dc)return;const shifted={};for(const k in state.cells){const [r,c]=keyRC(k);shifted[(r+dr)+"_"+(c+dc)]=state.cells[k];}state.cells=shifted;selection=new Set([...selection].map(k=>{const [r,c]=keyRC(k);return (r+dr)+"_"+(c+dc);}));if(cellKey){const [r,c]=keyRC(cellKey);cellKey=(r+dr)+"_"+(c+dc);}}
+function shiftGridContent(dr,dc){if(!dr&&!dc)return;const shifted={};for(const k in state.cells){if(isBandKey(k)){shifted[k]=state.cells[k];continue;}const [r,c]=keyRC(k);shifted[(r+dr)+"_"+(c+dc)]=state.cells[k];}state.cells=shifted;
+  cutsList().forEach(cut=>{cut.ax+=dc;cut.bx+=dc;cut.ay+=dr;cut.by+=dr;});
+  selection=new Set([...selection].map(k=>{if(isBandKey(k))return k;const [r,c]=keyRC(k);return (r+dr)+"_"+(c+dc);}));
+  if(cellKey&&!isBandKey(cellKey)){const [r,c]=keyRC(cellKey);cellKey=(r+dr)+"_"+(c+dc);}}
 function gridAddValue(){return clamp(Math.round(Number($("#gridAddCount").value)||1),1,50);}
 function updateGridSheet(){const n=gridAddValue();$("#gridAddCount").value=n;$("#gridSizeText").textContent=GRID_W+" 欄 × "+GRID_H+" 列";document.querySelectorAll("[data-expand]").forEach(b=>{const d=b.dataset.expand;b.textContent=(d==="up"?"上方":d==="down"?"下方":d==="left"?"左側":"右側")+"新增 "+n+(d==="up"||d==="down"?" 列":" 欄");});document.querySelectorAll("[data-shrink]").forEach(b=>{const d=b.dataset.shrink;b.textContent=(d==="up"?"上方":d==="down"?"下方":d==="left"?"左側":"右側")+"縮減 "+n+(d==="up"||d==="down"?" 列":" 欄");});}
 function expandGrid(dir,count=gridAddValue()){count=clamp(Math.round(Number(count)||1),1,50);const vertical=dir==="up"||dir==="down",limit=vertical?MAX_GRID_H:MAX_GRID_W,current=vertical?GRID_H:GRID_W,add=Math.min(count,Math.max(0,limit-current));if(!add){toast(`已達網格上限（${MAX_GRID_W} 欄 × ${MAX_GRID_H} 列）`);return false;}if(dir==="up")shiftGridContent(add,0);else if(dir==="left")shiftGridContent(0,add);if(vertical)state.gridH=GRID_H+add;else state.gridW=GRID_W+add;selRect=null;selStart=null;syncGridMetrics();recompute();save();updateSelBar();fit();drawBase();drawOverlay();renderList();updateGridSheet();toast(`已向${dir==="up"?"上":dir==="down"?"下":dir==="left"?"左":"右"}新增 ${add} ${vertical?"列":"欄"}`);return true;}
 function shrinkGrid(dir,count=gridAddValue()){count=clamp(Math.round(Number(count)||1),1,50);const vertical=dir==="up"||dir==="down",current=vertical?GRID_H:GRID_W,remove=Math.min(count,current-1);if(!remove){toast("網格至少必須保留一列與一欄");return false;}
-  const cropped=k=>{const [r,c]=keyRC(k);return dir==="up"?r<remove:dir==="down"?r>=GRID_H-remove:dir==="left"?c<remove:c>=GRID_W-remove;},affected=Object.keys(state.cells).filter(cropped);
+  const cropped=k=>{if(isBandKey(k))return false;const [r,c]=keyRC(k);return dir==="up"?r<remove:dir==="down"?r>=GRID_H-remove:dir==="left"?c<remove:c>=GRID_W-remove;},affected=Object.keys(state.cells).filter(cropped);
   if(affected.length&&!confirm(`從${dir==="up"?"上方":dir==="down"?"下方":dir==="left"?"左側":"右側"}縮減 ${remove} ${vertical?"列":"欄"}，會刪除範圍內 ${affected.length} 個有內容的格子。確定繼續？`))return false;
-  const shifted={};for(const k in state.cells){if(cropped(k))continue;const [r,c]=keyRC(k),nr=r-(dir==="up"?remove:0),nc=c-(dir==="left"?remove:0);shifted[nr+"_"+nc]=state.cells[k];}state.cells=shifted;
-  selection=new Set([...selection].filter(k=>!cropped(k)).map(k=>{const [r,c]=keyRC(k);return (r-(dir==="up"?remove:0))+"_"+(c-(dir==="left"?remove:0));}));if(cellKey){if(cropped(cellKey))cellKey=null;else{const [r,c]=keyRC(cellKey);cellKey=(r-(dir==="up"?remove:0))+"_"+(c-(dir==="left"?remove:0));}}
+  const shifted={};for(const k in state.cells){if(cropped(k))continue;if(isBandKey(k)){shifted[k]=state.cells[k];continue;}const [r,c]=keyRC(k),nr=r-(dir==="up"?remove:0),nc=c-(dir==="left"?remove:0);shifted[nr+"_"+nc]=state.cells[k];}state.cells=shifted;
+  selection=new Set([...selection].filter(k=>!cropped(k)).map(k=>{if(isBandKey(k))return k;const [r,c]=keyRC(k);return (r-(dir==="up"?remove:0))+"_"+(c-(dir==="left"?remove:0));}));if(cellKey){if(cropped(cellKey))cellKey=null;else{const [r,c]=keyRC(cellKey);cellKey=(r-(dir==="up"?remove:0))+"_"+(c-(dir==="left"?remove:0));}}
   if(vertical)state.gridH=GRID_H-remove;else state.gridW=GRID_W-remove;selRect=null;selStart=null;pruneOrphanedShops();syncGridMetrics();recompute();save();updateSelBar();fit();drawBase();drawOverlay();renderList();updateGridSheet();toast(`已從${dir==="up"?"上方":dir==="down"?"下方":dir==="left"?"左側":"右側"}縮減 ${remove} ${vertical?"列":"欄"}`);return true;}
 $("#backdrop").onclick=()=>{ closeAllSheets(); $("#backdrop").classList.remove("on"); };
 $("#btnMenu").onclick=()=>{ $("#showGrid").checked=state.showGrid; $("#showLabels").checked=state.showLabels; $("#showNames").checked=state.showNames; openSheet("menuSheet"); };
@@ -967,12 +1136,14 @@ function drawExportList(ctx,layout){ if(!layout.includeList)return; const top=la
       ctx.fillStyle="#1c2b2e";ctx.font="600 27px 'Noto Sans TC',sans-serif";ctx.textAlign="left";ctx.textBaseline="alphabetic";lines.forEach((line,i)=>ctx.fillText(line,x+50,nameY+i*28,colW-70));
       ctx.fillStyle="#53676b";ctx.font="21px 'Noto Sans TC',sans-serif";ctx.fillText(cat?cat.name:"",x+50,catY,colW-70);y+=height;}); } }
 function renderComposite(ctx,scale,opts={}){ const layout=exportLayout(opts); ctx.save();ctx.scale(scale,scale);ctx.fillStyle="#fff";ctx.fillRect(0,0,layout.width,layout.totalH);ctx.save();ctx.translate(layout.padX,layout.padY);
-  if(layout.mode==="plan"||layout.mode==="overlay")for(const k in state.cells){const d=state.cells[k];if(!d.plan)continue;const z=zoneById(d.plan);if(!z)continue;const [r,c]=keyRC(k),opacity=d.plan==="zw"?1:layout.baseOpacity/100;if(d.plan==="zw")fillCell(ctx,r,c,d,hexA(z.color,opacity));else{ctx.fillStyle=hexA(z.color,opacity);ctx.fillRect(c*CW,r*CH,CW+.6,CH+.6);}}
-  if(layout.mode!=="plan"){const a=state.fillA/100;for(const k in state.cells){const d=state.cells[k];if(!d.cat)continue;const cat=catById(d.cat);if(!cat)continue;const [r,c]=keyRC(k);fillCell(ctx,r,c,d,hexA(cat.color,a));}}
-  drawWalls(ctx);
-  if(layout.mode!=="plan")drawShopBorders(ctx);
+  if(layout.mode==="plan"||layout.mode==="overlay")for(const k in state.cells){const d=state.cells[k];if(!d.plan)continue;const z=zoneById(d.plan);if(!z)continue;const [r,c]=keyRC(k);const opacity=layout.baseOpacity/100;ctx.fillStyle=hexA(z.color,opacity);ctx.fillRect(c*CW,r*CH,CW+.6,CH+.6);}
+  if(layout.mode!=="plan"){const a=state.fillA/100;for(const k in state.cells){const d=state.cells[k];if(!d.cat||isBandKey(k)||cellCovered(k))continue;const cat=catById(d.cat);if(!cat)continue;const [r,c]=keyRC(k);fillCell(ctx,r,c,d,hexA(cat.color,a));}}
   if(state.showGrid){ctx.lineWidth=Math.max(.4,CW*.04);ctx.strokeStyle="rgba(20,50,55,.13)";ctx.beginPath();for(let c=0;c<=GRID_W;c++){ctx.moveTo(c*CW,0);ctx.lineTo(c*CW,imgH);}for(let r=0;r<=GRID_H;r++){ctx.moveTo(0,r*CH);ctx.lineTo(imgW,r*CH);}ctx.stroke();}
-  if(layout.mode!=="plan"&&!layout.omitShopLabels)layout.shops.forEach(sh=>{const num=numbers[sh.id];shopLabelAnchors(sh.id).forEach(anchor=>{const cx=(anchor[1]+.5)*CW,cy=(anchor[0]+.5)*CH,rr=CH*.75;ctx.fillStyle="#0e3b43";ctx.beginPath();ctx.arc(cx,cy,rr,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="700 "+(CH*.9)+"px 'Noto Sans TC',sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(num,cx,cy+CH*.03);});});
+  if(layout.mode!=="plan"){const a=state.fillA/100;
+    forEachBandCell((k,d,q)=>{if(!d.cat)return;const cat=catById(d.cat);if(cat)fillQuad(ctx,q,hexA(cat.color,a));});
+    if(state.showGrid)drawBandGrid(ctx); drawShopBorders(ctx);}
+  drawCutLines(ctx,false);
+  if(layout.mode!=="plan"&&!layout.omitShopLabels)layout.shops.forEach(sh=>{const num=numbers[sh.id];shopLabelAnchors(sh.id).forEach(anchor=>{const cx=anchor[0],cy=anchor[1],rr=CH*.75;ctx.fillStyle="#0e3b43";ctx.beginPath();ctx.arc(cx,cy,rr,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="700 "+(CH*.9)+"px 'Noto Sans TC',sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(num,cx,cy+CH*.03);});});
   ctx.restore();drawExportLegend(ctx,layout);drawExportList(ctx,layout);ctx.restore();return layout; }
 
 /* ---- exports ---- */
@@ -999,13 +1170,14 @@ $("#expXLSX").onclick=()=>{ const x=exportXlsxBytes(); dl(new Blob([x],{type:"ap
 
 function wrapSvgText(text,maxChars,maxLines=2){const chars=Array.from(String(text||"")),lines=[];for(let i=0;i<chars.length&&lines.length<maxLines;i+=maxChars)lines.push(chars.slice(i,i+maxChars).join(""));if(lines.join("").length<chars.length&&lines.length)lines[lines.length-1]=lines[lines.length-1].slice(0,-1)+"…";return lines.length?lines:[""];}
 function buildSVG(opts={}){ const layout=exportLayout(opts);let r=`<svg xmlns="http://www.w3.org/2000/svg" width="${layout.width}" height="${layout.totalH}" viewBox="0 0 ${layout.width} ${layout.totalH}" font-family="'Noto Sans TC',sans-serif"><rect width="${layout.width}" height="${layout.totalH}" fill="#fff"/><g transform="translate(${layout.padX} ${layout.padY})">`;
-  if(layout.mode==="plan"||layout.mode==="overlay")for(const k in state.cells){const d=state.cells[k];if(!d.plan)continue;const z=zoneById(d.plan);if(!z)continue;const [rr,c]=keyRC(k),opacity=d.plan==="zw"?1:layout.baseOpacity/100;r+=svgCell(rr,c,d.plan==="zw"?cellShape(d):null,`fill="${z.color}" fill-opacity="${opacity}"`);}
-  if(layout.mode!=="plan"){const a=state.fillA/100;for(const k in state.cells){const d=state.cells[k];if(!d.cat)continue;const cat=catById(d.cat);if(!cat)continue;const [rr,c]=keyRC(k);r+=svgCell(rr,c,cellShape(d),`fill="${cat.color}" fill-opacity="${a}"`);}}
-  const wallColor=zoneById("zw")?.color||"#3B3838";for(const k in state.cells){const d=state.cells[k];if(d.plan!=="zw")continue;const [rr,c]=keyRC(k);r+=svgCell(rr,c,cellShape(d),`class="wall" fill="${wallColor}"`);}
+  if(layout.mode==="plan"||layout.mode==="overlay")for(const k in state.cells){const d=state.cells[k];if(!d.plan)continue;const z=zoneById(d.plan);if(!z)continue;const [rr,c]=keyRC(k);r+=svgCell(rr,c,null,`fill="${z.color}" fill-opacity="${layout.baseOpacity/100}"`);}
+  if(layout.mode!=="plan"){const a=state.fillA/100;for(const k in state.cells){const d=state.cells[k];if(!d.cat||isBandKey(k)||cellCovered(k))continue;const cat=catById(d.cat);if(!cat)continue;const [rr,c]=keyRC(k);r+=svgCell(rr,c,cellShape(d),`fill="${cat.color}" fill-opacity="${a}"`);}
+    r+=svgBands("#fff");}
+  r+=svgCuts();
   if(layout.mode!=="plan")for(const k in state.cells){const d=state.cells[k];if(!d.shop)continue;
-    shopBorderSegments(k,d).forEach(g=>r+=`<line x1="${g[0].toFixed(2)}" y1="${g[1].toFixed(2)}" x2="${g[2].toFixed(2)}" y2="${g[3].toFixed(2)}" stroke="#142d32" stroke-opacity=".55" stroke-width="${(CW*.12).toFixed(1)}" stroke-linecap="round"/>`);}
+    allBorderSegments(k,d).forEach(g=>r+=`<line x1="${g[0].toFixed(2)}" y1="${g[1].toFixed(2)}" x2="${g[2].toFixed(2)}" y2="${g[3].toFixed(2)}" stroke="#142d32" stroke-opacity=".55" stroke-width="${(CW*.12).toFixed(1)}" stroke-linecap="round"/>`);}
   if(state.showGrid){r+=`<g stroke="#143237" stroke-opacity=".13" stroke-width="0.5">`;for(let c=0;c<=GRID_W;c++)r+=`<line x1="${(c*CW).toFixed(1)}" y1="0" x2="${(c*CW).toFixed(1)}" y2="${imgH}"/>`;for(let rr=0;rr<=GRID_H;rr++)r+=`<line x1="0" y1="${(rr*CH).toFixed(1)}" x2="${imgW}" y2="${(rr*CH).toFixed(1)}"/>`;r+=`</g>`;}
-  if(layout.mode!=="plan"&&!layout.omitShopLabels)layout.shops.forEach(sh=>{const num=numbers[sh.id];shopLabelAnchors(sh.id).forEach(anchor=>{const cx=(anchor[1]+.5)*CW,cy=(anchor[0]+.5)*CH;r+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${(CH*.75).toFixed(1)}" fill="#0e3b43"/><text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" fill="#fff" font-size="${(CH*.9).toFixed(1)}" font-weight="700" text-anchor="middle" dominant-baseline="central">${num}</text>`;});});
+  if(layout.mode!=="plan"&&!layout.omitShopLabels)layout.shops.forEach(sh=>{const num=numbers[sh.id];shopLabelAnchors(sh.id).forEach(anchor=>{const cx=anchor[0],cy=anchor[1];r+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${(CH*.75).toFixed(1)}" fill="#0e3b43"/><text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" fill="#fff" font-size="${(CH*.9).toFixed(1)}" font-weight="700" text-anchor="middle" dominant-baseline="central">${num}</text>`;});});
   r+=`</g>`;
   const ly=layout.mapH,colW=(layout.width-72)/EXPORT_COLS;r+=`<rect x="0" y="${ly}" width="${layout.width}" height="${layout.legendH}" fill="#fff"/><line x1="0" y1="${ly}" x2="${layout.width}" y2="${ly}" stroke="#cad4d5"/><text x="36" y="${ly+40}" fill="#0e3b43" font-size="27" font-weight="700">顏色圖例｜${layout.mode==="plan"?"原先規劃":"實際分類"}</text>`;
   layout.legendItems.forEach((item,i)=>{const col=i%EXPORT_COLS,row=Math.floor(i/EXPORT_COLS),x=36+col*colW,y=ly+83+row*48;r+=`<rect x="${x.toFixed(1)}" y="${(y-21).toFixed(1)}" width="29" height="29" rx="4" fill="${item.color}" stroke="#000" stroke-opacity=".22"/><text x="${(x+41).toFixed(1)}" y="${(y+2).toFixed(1)}" fill="#203236" font-size="21" font-weight="600">${xesc(item.name)}</text>`;});
@@ -1073,7 +1245,7 @@ function addCloseButtons(){
   if(modal&&!modal.querySelector(":scope > .sheetx"))modal.insertBefore(mk("關閉",()=>$("#catDone").click()),modal.firstChild);
 }
 addCloseButtons();
-function boot(){ normalizeTaxonomy(); normalizeWalls();syncGridMetrics(); ensureNamedRegions(); lastShopName=shopById(state.lastShopId)?.name||""; recompute(); syncListCollapse(); syncLegend(); syncExportOptions(); fit(); drawBase(); drawOverlay(); renderList(); setMode("assign"); setView(state.view||"actual"); }
+function boot(){ normalizeTaxonomy(); normalizeWalls();syncGridMetrics(); refreshBands(); ensureNamedRegions(); lastShopName=shopById(state.lastShopId)?.name||""; recompute(); syncListCollapse(); syncLegend(); syncExportOptions(); fit(); drawBase(); drawOverlay(); renderList(); setMode("assign"); setView(state.view||"actual"); }
 if(!load()){ state.cells=clone(DEFAULT_PLAN_CELLS); }
 window.addEventListener("resize",debounce(()=>{ fit(); if(activeShop)zoomToShop(activeShop); },200));
 window.addEventListener("beforeunload",()=>{try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}});

@@ -445,12 +445,12 @@ function clone(o){return JSON.parse(JSON.stringify(o));}
 function $(s){return document.querySelector(s);}
 function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 const persistState=debounce(()=>{try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}},250);
-function historySnapshot(){const out={};HISTORY_KEYS.forEach(k=>out[k]=clone(state[k]));return out;}
+function historySnapshot(){const out={};HISTORY_KEYS.forEach(k=>out[k]=state[k]);return JSON.stringify(out);}
 function updateHistoryButtons(){const u=$("#btnUndo"),r=$("#btnRedo");if(u)u.disabled=!undoStack.length;if(r)r.disabled=!redoStack.length;}
-function recordHistory(){if(!historyReady||historyBusy)return;const next=historySnapshot();if(historyCurrent&&JSON.stringify(next)===JSON.stringify(historyCurrent))return;if(historyCurrent){undoStack.push(historyCurrent);if(undoStack.length>HISTORY_LIMIT)undoStack.shift();}historyCurrent=next;redoStack=[];updateHistoryButtons();}
+function recordHistory(){if(!historyReady||historyBusy)return;const next=historySnapshot();if(historyCurrent&&next===historyCurrent)return;if(historyCurrent){undoStack.push(historyCurrent);if(undoStack.length>HISTORY_LIMIT)undoStack.shift();}historyCurrent=next;redoStack=[];updateHistoryButtons();}
 function save(){recordHistory();persistState();}
 function initHistory(){historyCurrent=historySnapshot();undoStack=[];redoStack=[];historyReady=true;historyBusy=false;updateHistoryButtons();}
-function restoreHistorySnapshot(snapshot){ editingCut=null; if(typeof syncCutBar==="function")syncCutBar();historyBusy=true;HISTORY_KEYS.forEach(k=>state[k]=clone(snapshot[k]));selection.clear();activeShop=null;clearShopInspection();cellKey=null;selRect=null;selStart=null;lastShopName=shopById(state.lastShopId)?.name||"";$("#targetbar").classList.remove("on");closeAllSheets();$("#backdrop").classList.remove("on");syncGridMetrics();recompute();syncListCollapse(true);renderLegend();updateSelBar();fitBase();applyT();drawBase();drawOverlay();renderList();updateGridSheet();historyCurrent=historySnapshot();historyBusy=false;persistState();updateHistoryButtons();}
+function restoreHistorySnapshot(snapshot){ editingCut=null; if(typeof syncCutBar==="function")syncCutBar();historyBusy=true;const snap=typeof snapshot==="string"?JSON.parse(snapshot):clone(snapshot);HISTORY_KEYS.forEach(k=>state[k]=snap[k]);selection.clear();activeShop=null;clearShopInspection();cellKey=null;selRect=null;selStart=null;lastShopName=shopById(state.lastShopId)?.name||"";$("#targetbar").classList.remove("on");closeAllSheets();$("#backdrop").classList.remove("on");syncGridMetrics();recompute();syncListCollapse(true);renderLegend();updateSelBar();fitBase();applyT();drawBase();drawOverlay();renderList();updateGridSheet();historyCurrent=historySnapshot();historyBusy=false;persistState();updateHistoryButtons();}
 function undoHistory(){if(!undoStack.length)return false;redoStack.push(historyCurrent);const target=undoStack.pop();restoreHistorySnapshot(target);return true;}
 function redoHistory(){if(!redoStack.length)return false;undoStack.push(historyCurrent);if(undoStack.length>HISTORY_LIMIT)undoStack.shift();const target=redoStack.pop();restoreHistorySnapshot(target);return true;}
 function esc(s){return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
@@ -927,17 +927,26 @@ function afterSel(){ if(activeShop){ recompute(); drawBase(); drawOverlay(); ren
 function drawBase(){ if(viewDirty()){renderAll();return;} drawBaseLayer(); }
 function drawOverlay(){ if(viewDirty()){renderAll();return;} drawOverlayLayer(); }
 function drawBaseLayer(){ beginView(bctx,base); bctx.fillStyle="#f5f7f7"; bctx.fillRect(0,0,imgW,imgH);
-  const op=state.view==="plan"?0.95:0.30;
+  const op=state.view==="plan"?0.95:0.30, byZone=new Map();
   for(const k in state.cells){ const d=state.cells[k]; if(!d.plan)continue; const z=zoneById(d.plan); if(!z)continue;
-    const [r,c]=keyRC(k);
-    bctx.fillStyle=hexA(z.color,op);bctx.fillRect(c*CW,r*CH,CW+0.6,CH+0.6); } }
+    const rc=keyRC(k), a=byZone.get(z.color); if(a)a.push(rc); else byZone.set(z.color,[rc]); }
+  byZone.forEach((list,color)=>{ bctx.fillStyle=hexA(color,op); bctx.beginPath();
+    for(let i=0;i<list.length;i++)bctx.rect(list[i][1]*CW,list[i][0]*CH,CW+0.6,CH+0.6); bctx.fill(); }); }
 
 function drawOverlayLayer(){
   beginView(octx,overlay); const a=state.fillA/100, actual=state.view==="actual";
   if(actual){
     octx.save();clipOutsideQuads(octx,bandActualQuads());
+    const byCat=new Map();
     for(const k in state.cells){ const d=state.cells[k]; if(!d.cat||isBandKey(k)||cellCovered(k))continue;
-      const c=catById(d.cat); if(!c)continue; const rc=keyRC(k); fillCell(octx,rc[0],rc[1],d,hexA(c.color,a)); }
+      const c=catById(d.cat); if(!c)continue; const arr=byCat.get(c.color); if(arr)arr.push(k); else byCat.set(c.color,[k]); }
+    byCat.forEach((keys,color)=>{ const col=hexA(color,a), shaped=[]; let plain=false;
+      octx.fillStyle=col; octx.beginPath();
+      for(const k of keys){ const rc=keyRC(k), poly=cellShape(state.cells[k]);
+        if(poly){ shaped.push([rc,poly]); continue; }
+        octx.rect(rc[1]*CW,rc[0]*CH,CW+0.6,CH+0.6); plain=true; }
+      if(plain)octx.fill();
+      for(const sp of shaped)fillPoly(octx,sp[0][0],sp[0][1],sp[1],col); });
     octx.restore();
   }
   if(state.showGrid){ octx.save();if(actual)clipOutsideQuads(octx,bandFootprintQuads());octx.lineWidth=Math.max(0.4,CW*0.04); octx.strokeStyle="rgba(20,50,55,.13)"; octx.beginPath();
@@ -965,8 +974,10 @@ function drawOverlayLayer(){
     octx.restore(); }
 }
 function drawShopBorders(ctx){ ctx.strokeStyle="rgba(20,45,50,.55)"; ctx.lineWidth=Math.max(0.8,CW*0.12); ctx.lineCap="round";
+  ctx.beginPath();
   for(const k in state.cells){ const d=state.cells[k]; if(!d.shop)continue;
-    allBorderSegments(k,d).forEach(g=>{ctx.beginPath();ctx.moveTo(g[0],g[1]);ctx.lineTo(g[2],g[3]);ctx.stroke();}); } ctx.lineCap="butt"; }
+    allBorderSegments(k,d).forEach(g=>{ctx.moveTo(g[0],g[1]);ctx.lineTo(g[2],g[3]);}); }
+  ctx.stroke(); ctx.lineCap="butt"; }
 function allBorderSegments(k,d){
   if(isBandKey(k)){ const q=keyQuad(k); if(!q)return []; const nb=cellNeighbors(k), out=[];
     for(let e=0;e<4;e++){ const nd=state.cells[nb[e]]; if(nd&&nd.shop===d.shop&&cellVisible(nb[e],nd))continue;
@@ -977,12 +988,16 @@ function allBorderSegments(k,d){
     return out; }
   if(cellCovered(k))return [];
   return shopBorderSegments(k,d).filter(g=>bandShopAtPoint((g[0]+g[2])/2,(g[1]+g[3])/2)!==d.shop); }
-function shopAnchor(id){ let best=null; for(const k in state.cells){ const d=state.cells[k];
-    if(d.shop!==id||!cellVisible(k,d))continue; const ctr=keyCenter(k); if(!ctr)continue;
+function shopAnchor(id,keys){ let best=null; for(const k of (keys||shopKeys(id))){ const d=state.cells[k]; if(!d)continue; const ctr=keyCenter(k); if(!ctr)continue;
     const r=ctr[1]/CH-0.5, c=ctr[0]/CW-0.5;
     if(!best||r<best[0]||(r===best[0]&&c<best[1])) best=[r,c]; } return best; }
-function shopComponents(id){
-  const pending=new Set(); for(const k in state.cells)if(state.cells[k].shop===id&&cellVisible(k,state.cells[k]))pending.add(k);
+function shopKeyIndex(){ const m=new Map();
+  for(const k in state.cells){ const d=state.cells[k]; if(!d.shop||!cellVisible(k,d))continue;
+    const a=m.get(d.shop); if(a)a.push(k); else m.set(d.shop,[k]); }
+  return m; }
+function shopKeys(id){ const out=[]; for(const k in state.cells){ const d=state.cells[k]; if(d.shop===id&&cellVisible(k,d))out.push(k); } return out; }
+function shopComponents(id,keys){
+  const pending=new Set(keys||shopKeys(id));
   const crossLinks=new Map(),link=(a,b)=>{if(!crossLinks.has(a))crossLinks.set(a,[]);if(!crossLinks.has(b))crossLinks.set(b,[]);crossLinks.get(a).push(b);crossLinks.get(b).push(a);};
   [...pending].filter(isBandKey).forEach(k=>{const q=keyQuad(k);gridKeysUnderQuad(q).forEach(nk=>{if(pending.has(nk))link(k,nk);});});
   const out=[];
@@ -998,12 +1013,12 @@ function componentAnchor(keys){
   const cx=pts.reduce((a,p)=>a+p[0],0)/pts.length, cy=pts.reduce((a,p)=>a+p[1],0)/pts.length;
   return pts.reduce((best,p)=>{const d=(p[0]-cx)**2+(p[1]-cy)**2;return !best||d<best.d?{p,d}:best;},null).p;
 }
-function shopLabelAnchors(id){return shopComponents(id).map(componentAnchor).filter(Boolean);}
+function shopLabelAnchors(id,keys){return shopComponents(id,keys).map(componentAnchor).filter(Boolean);}
 function shopCentroid(id){ let sr=0,sc=0,n=0; for(const k in state.cells){ const d=state.cells[k];
     if(d.shop!==id||!cellVisible(k,d))continue; const ctr=keyCenter(k); if(!ctr)continue; sr+=ctr[1]/CH-0.5; sc+=ctr[0]/CW-0.5; n++; }
   return n?[sr/n,sc/n,n]:null; }
-function shopSortMetrics(id){let firstOpenX=Infinity,minY=Infinity,minX=Infinity,sumX=0,sumY=0,n=0;
-  for(const k in state.cells){const dd=state.cells[k]; if(dd.shop!==id||!cellVisible(k,dd))continue;
+function shopSortMetrics(id,keys){let firstOpenX=Infinity,minY=Infinity,minX=Infinity,sumX=0,sumY=0,n=0;
+  for(const k of (keys||shopKeys(id))){const dd=state.cells[k]; if(!dd)continue;
     let y,x,left;
     if(isBandKey(k)){const ctr=keyCenter(k);if(!ctr)continue;x=ctr[0]/CW-0.5;y=ctr[1]/CH-0.5;left=Math.floor(x)-1;}
     else{const rc=keyRC(k);y=rc[0];x=rc[1];left=x-1;
@@ -1012,8 +1027,9 @@ function shopSortMetrics(id){let firstOpenX=Infinity,minY=Infinity,minX=Infinity
   return n?{firstOpenX,minY,minX,averageScore:sumX/n+1.01*(sumY/n)}:null;}
 function drawLabels(ctx){
   if(!state.showLabels && !state.showNames) return;
-  state.shops.forEach(sh=>{ const num=numbers[sh.id];
-    shopLabelAnchors(sh.id).forEach(anchor=>{ const cx=anchor[0], cy=anchor[1];
+  const idx=shopKeyIndex();
+  state.shops.forEach(sh=>{ const num=numbers[sh.id], keys=idx.get(sh.id); if(!keys)return;
+    shopLabelAnchors(sh.id,keys).forEach(anchor=>{ const cx=anchor[0], cy=anchor[1];
       if(state.showLabels && num){ const rr=CH*0.7; ctx.fillStyle="#0e3b43"; ctx.beginPath(); ctx.arc(cx,cy,rr,0,7); ctx.fill();
         ctx.fillStyle="#fff"; ctx.font="700 "+(CH*0.85)+"px 'Noto Sans TC',sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(num,cx,cy+CH*0.03); }
       if(state.showNames){ ctx.fillStyle="#10312f"; ctx.font="600 "+(CH*0.75)+"px 'Noto Sans TC',sans-serif"; ctx.textAlign="center"; ctx.textBaseline="top";
@@ -1023,8 +1039,10 @@ function drawLabels(ctx){
 }
 
 /* ---- numbering: left-side opening x, occupied min y, occupied min x, then average x + 1.01y ---- */
-function recompute(){
-  const arr=state.shops.map(sh=>{const metrics=shopSortMetrics(sh.id);return metrics?{id:sh.id,...metrics}:null;}).filter(Boolean);
+function recompute(idx){
+  idx=idx||shopKeyIndex();
+  const arr=state.shops.map(sh=>{const keys=idx.get(sh.id);if(!keys)return null;
+    const metrics=shopSortMetrics(sh.id,keys);return metrics?{id:sh.id,...metrics}:null;}).filter(Boolean);
   arr.sort((p,q)=>p.firstOpenX-q.firstOpenX||p.minY-q.minY||p.minX-q.minX||p.averageScore-q.averageScore||p.id.localeCompare(q.id));
   numbers={}; arr.forEach((x,i)=>numbers[x.id]=i+1);
 }
@@ -1207,12 +1225,13 @@ $("#cellSave").onclick=()=>{ if(!cellKey)return; const cur=state.cells[cellKey]|
   pruneUnusedUnnamedShops(); recompute(); save(); closeSheet("cellSheet"); drawBase(); drawOverlay(); renderList(); };
 
 /* ---- shop list ---- */
-function shopCount(id){ let n=0; for(const k in state.cells){const d=state.cells[k]; if(d.shop===id&&cellVisible(k,d))n++;} return n; }
+function shopCount(id,keys){ return keys?keys.length:shopKeys(id).length; }
 function clearShopInspection(clearSearch=true){inspectedShop=null;if(clearSearch){shopFilter="";const search=$("#shopSearch");if(search)search.value="";}}
 function inspectShopFromMap(id){const sh=shopById(id);if(!sh)return;if(inspectedShop===id){clearShopInspection();drawOverlay();renderList();if(!state.listCollapsed){state.listCollapsed=true;persistState();syncListCollapse(true);}return;}activeShop=null;$("#targetbar").classList.remove("on");selection.clear();updateSelBar();inspectedShop=id;shopFilter="";$("#shopSearch").value=sh.name;if(state.listCollapsed){state.listCollapsed=false;persistState();syncListCollapse(true);}drawOverlay();renderList();}
 function renderList(){
-  recompute();
-  const ordered=[...state.shops].filter(sh=>shopCount(sh.id)>0).sort((a,b)=>(numbers[a.id]||999)-(numbers[b.id]||999));
+  const idx=shopKeyIndex();
+  recompute(idx);
+  const ordered=[...state.shops].filter(sh=>(idx.get(sh.id)||[]).length>0).sort((a,b)=>(numbers[a.id]||999)-(numbers[b.id]||999));
   $("#shopCnt").textContent=ordered.length; $("#listFabCnt").textContent=ordered.length;
   const host=$("#shopList"),prevScroll=host.scrollTop; host.innerHTML="";
   if(!ordered.length){ host.innerHTML='<div class="empty">尚無店家。用「匡選編輯」選取格子後輸入店名；之後也可點清單店家，快速連續標註。</div>'; return; }
@@ -1220,7 +1239,7 @@ function renderList(){
   if(!shown.length){ host.innerHTML='<div class="empty">找不到符合的店家或分類。</div>'; return; }
   shown.forEach(sh=>{ const cat=catById(sh.cat); const it=document.createElement("div"); it.className="shopitem"+(activeShop===sh.id||inspectedShop===sh.id?" active":""); it.tabIndex=0; it.setAttribute("role","button");
     it.innerHTML=`<div class="numbadge">${numbers[sh.id]||"–"}</div><div class="dot" style="background:${cat?cat.color:'#ccc'}"></div>`+
-      `<div class="nm">${esc(sh.name)}</div><div class="meta">${cat?esc(cat.name):"—"} · ${shopCount(sh.id)}格</div>`+
+      `<div class="nm">${esc(sh.name)}</div><div class="meta">${cat?esc(cat.name):"—"} · ${(idx.get(sh.id)||[]).length}格</div>`+
       `<div class="edit" data-edit role="button" aria-label="編輯 ${esc(sh.name)}">✎</div>`;
     it.onclick=e=>{ if(e.target.closest("[data-edit]")){ openShopEdit(sh.id); } else focusShop(sh.id); };
     it.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();focusShop(sh.id);}};
@@ -1352,7 +1371,7 @@ $("#resetApply").onclick=()=>{const mode=selectedResetMode();if(mode==="default"
 
 /* ---- render composite (for export) ---- */
 const EXPORT_PAD_X=CW*5, EXPORT_PAD_Y=CH*5, EXPORT_COLS=5, EXPORT_LEGEND_H=174, EXPORT_LIST_ROW_H=65, EXPORT_LIST_ROW_WRAP_H=92;
-function exportOrderedShops(){ recompute(); return state.shops.filter(sh=>shopCount(sh.id)>0).sort((a,b)=>(numbers[a.id]||999)-(numbers[b.id]||999)); }
+function exportOrderedShops(){ const idx=shopKeyIndex(); recompute(idx); return state.shops.filter(sh=>(idx.get(sh.id)||[]).length>0).sort((a,b)=>(numbers[a.id]||999)-(numbers[b.id]||999)); }
 function normalizedExportOptions(opts={}){ const mode=["plan","overlay","actual"].includes(opts.mode)?opts.mode:"overlay";
   const omitShopLabels=mode!=="plan"&&!!opts.omitShopLabels,rawOpacity=Number(opts.baseOpacity),baseOpacity=clamp(Number.isFinite(rawOpacity)?rawOpacity:90,0,100);
   return {mode,baseOpacity,omitShopLabels,includeList:mode!=="plan"&&!omitShopLabels&&!!opts.includeList}; }
@@ -1397,7 +1416,8 @@ function renderComposite(ctx,scale,opts={}){ const layout=exportLayout(opts); ct
 function stamp(){ const d=new Date(),p=n=>String(n).padStart(2,"0"); return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes()); }
 function dl(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1500); }
 function exportRows(){ const rows=[[{t:'s',v:'編號'},{t:'s',v:'店家'},{t:'s',v:'分類'},{t:'s',v:'格數'},{t:'s',v:'分布區塊數'},{t:'s',v:'首格位置'}]];
-  exportOrderedShops().forEach(sh=>{ const cat=catById(sh.cat),a=shopAnchor(sh.id); rows.push([{t:'n',v:numbers[sh.id]},{t:'s',v:sh.name},{t:'s',v:cat?cat.name:''},{t:'n',v:shopCount(sh.id)},
+  const xlIdx=shopKeyIndex();
+  exportOrderedShops().forEach(sh=>{ const cat=catById(sh.cat),xlKeys=xlIdx.get(sh.id)||[],a=shopAnchor(sh.id,xlKeys); rows.push([{t:'n',v:numbers[sh.id]},{t:'s',v:sh.name},{t:'s',v:cat?cat.name:''},{t:'n',v:xlKeys.length},
     {t:'n',v:shopComponents(sh.id).length},{t:'s',v:a?`第 ${a[0]+1} 列／第 ${a[1]+1} 欄`:''}]); }); return rows; }
 function exportXlsxBytes(){return buildXlsx("店家對照表",exportRows());}
 function canvasBytes(cv,type,quality){return new Promise((resolve,reject)=>cv.toBlob(async b=>b?resolve(new Uint8Array(await b.arrayBuffer())):reject(new Error("canvas export failed")),type,quality));}
